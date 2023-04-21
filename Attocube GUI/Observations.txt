@@ -1,0 +1,6 @@
+AttoDry :
+New controller hardware, works with the ANC350V4 software (qcodes_contrib_drivers.drivers.Attocube.ANC350Lib.v4 python lib) and 64 bits (requires anc350v4.dll)
+
+AttoLiquid:
+Old controller hardware, works with ANC350V2 software and cannot be upgraded (PyANC350v2 python lib). I could only make the 32 bits version work, 
+which requires to change the python interpreter.  Requires a bunch of dll which are in ANC350v2lib_32bits (hvpositionerv2 is the main one, the other ones are needed to make it work)
