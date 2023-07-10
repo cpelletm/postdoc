@@ -91,9 +91,7 @@ class NVAFM_scan_matFile(matFile):
     keys=['__header__', '__version__', '__globals__', 'smNVscan', '__function_workspace__']
     def __init__(self, pathToFile) -> None:
         super().__init__(pathToFile)
-        assert self.keys==self.matKeys, 'Wrong file (%s) for the class (%s)'%(self.matKeys[3],self.keys[3])
-
-        self.sm=self.matDic['smNVscan']
+        self.sm=self.matDic[self.matKeys[3]]
         self.scdata=self.sm['Scanner'].item()['ScanCreate'].item(0)['scData'].item()['Fields'].item()
         scdatakeys=['ed_xmin', 'ed_xmax', 'ed_nx', 'cb_bFixX', 'ed_ymin', 'ed_ymax', 'ed_ny', 'cb_bFixY', 'ed_zmin', 'ed_zmax', 'ed_nz', 'cb_bFixZ', 'ed_loopOrder', 'ed_theta', 'ed_setRange', 'ed_setNpixels', 'nx', 'ny', 'nz', 'loopOrder']
         self.regin=self.sm['Scanner'].item()['MoveData'].item(0)['ReadChans'].item(0)
@@ -114,7 +112,7 @@ class NVAFM_scan_matFile(matFile):
         self.ny=int(self.scdata['ny'].item())
         self.xplot=np.linspace(self.xmin,self.xmax,self.nx+1) #+1 because matplotlib colormesh is weird
         self.yplot=np.linspace(self.ymin,self.ymax,self.ny+1)
-        if excludeNan :
+        if excludeNan:
             for i in range(self.ny):
                 if np.isnan(data[i,0]) :
                     self.ny=i
@@ -136,34 +134,22 @@ class NVAFM_scan_matFile(matFile):
         #nForward = 1 : forward : =0 : backward
         #nRegin= according to the regin list
         data=self.sm['Scanner'].item()['ScanData'].item(0)['data'].item()['dir'].item(nRegin)['data'].item(1-nForward)
-        return data
+        if self.xBeforeY() :
+            return data
+        else :
+            return data.T
     
-    def plot(self,dataKey='Vz forward',excludeNan=True,invertX=True,invertY=True,flipXY=True,squarePixels=True):
+    def plot(self,dataKey='Vz forward',excludeNan=True,invertX=True,invertY=True,flipXY=True,squarePixels=True,correctGradient=False, vmin=None, vmax=None):
+        ctrMap="viridis"
+        VzMap="viridis" #"Blues_r"
+        magnetoMap="bwr"
+        cmaps={"Vz forward":VzMap,"Vz backward":VzMap,'Counter1 forward':ctrMap, 'Counter1 backward':ctrMap, 'Counter2 forward':ctrMap, 'Counter2 backward':ctrMap, 'Norm forward' :magnetoMap, 'Norm backward':magnetoMap, 'Diff forward':magnetoMap, 'Diff backward':magnetoMap, 'RFFreq forward':magnetoMap, 'RFFreq backward':magnetoMap}
         C=self.dataDic[dataKey]
-        if not self.xBeforeY(): #Confusing but the goal is to always have x as the columns (horizontal) and y as the rows (vertical).
-            C=C.T
-        #This means that the items of C or organized following C[i_y,i_x]
         self.findRange(excludeNan=excludeNan,data=C)
         C=C[:self.ny,:self.nx]
         xlabel='X voltage (V)'
         ylabel='Y voltage (V)'
-        if flipXY :
-            C=C.T
-            self.xplot,self.yplot=self.yplot,self.xplot
-            xlabel,ylabel=ylabel,xlabel
-        fig, ax = plt.subplots()
-        if squarePixels :
-            ax.set_aspect('equal')
-        scan=ax.pcolormesh(self.xplot,self.yplot,C)
-        if invertX :
-            ax.invert_xaxis()
-        if invertY :
-            ax.invert_yaxis()
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        plt.colorbar(mappable=scan,ax=ax)
-        fig.set_tight_layout(tight=True)
-        plt.show()
+        analyse.plot_map(C=C,xAxis=self.xplot,yAxis=self.yplot,color=cmaps[dataKey],xBeforeY=self.xBeforeY(),invertX=invertX,invertY=invertY, flipXY=flipXY, squarePixels=squarePixels,correctGradient=correctGradient,vmin=vmin,vmax=vmax,xlabel=xlabel,ylabel=ylabel)
 
 class NVAFM_RFscan_matFile(matFile):
     keys=['__header__', '__version__', '__globals__', 'smNVscan_new', '__function_workspace__']
@@ -189,6 +175,8 @@ class NVAFM_RFscan_matFile(matFile):
         f=self.sm['Scanner'].item()['ScanCreate'].item(0)['scData'].item()['Fields'].item()
         self.xmin,self.xmax,self.ymin,self.ymax=f['ed_xmin'].item(),f['ed_xmax'].item(),f['ed_ymin'].item(),f['ed_ymax'].item()
         self.nx,self.ny,self.nz=f['nx'].item(),f['ny'].item(),f['nz'].item()
+        self.xrange=np.linspace(self.xmin,self.xmax,self.nx)
+        self.yrange=np.linspace(self.ymin,self.ymax,self.ny)
         self.theta=f['ed_theta']
         if 'Vzdata' in headers(self.sm['Scanner'].item()['ScanData'].item(0)) :
             self.Vz=self.sm['Scanner'].item()['ScanData'].item(0)['Vzdata'].item()[:self.nScans]
@@ -329,15 +317,19 @@ class NVAFM_scan_with_fb(NVAFM_scan_matFile):
         self.dataDic['Counter1 forward']=ctr1
         self.dataDic['Counter2 forward']=ctr2
 
-
+class NVAFM_sweeper(matFile):
+    keys=['__header__', '__version__', '__globals__', 'smNVsweeper', '__function_workspace__']
+    def __init__(self, pathToFile) -> None:
+        super().__init__(pathToFile)
+        assert self.keys==self.matKeys, 'Wrong file (%s) for the class (%s)'%(self.matKeys[3],self.keys[3])
+        
         
 
 
 
 if __name__=='__main__':
-    t=NVAFM_scan_with_fb(fileScanFeedback,startIndex=189)
-    print(t.dataDic.keys())
-    t.plot(dataKey='Counter1 forward')
+    t=NVAFM_scan_matFile(fileScan)
+    t.plot(excludeNan=True)
 
    
     

@@ -1,21 +1,19 @@
 import os
 import sys
 import json
+import pyqtgraph as pg
+import numpy as np
 
 def jsonwrite():
     
-    fname=os.path.join(os.path.dirname(__file__),'GUI config files','style sheet.json')
+    fname=os.path.join(os.path.dirname(__file__),'GUI config files','test_config.json')
     d={}
-    d['lightPenColors']=[(31, 119, 180),(255, 127, 14),(44, 160, 44),(214, 39, 40),(148, 103, 189),(140, 86, 75),(227, 119, 194),(127, 127, 127),(188, 189, 34),(23, 190, 207)]
-    d['darkPenColors']=[(255, 127, 14),(31, 119, 180),(44, 160, 44),(214, 39, 40),(148, 103, 189),(140, 86, 75),(227, 119, 194),(127, 127, 127),(188, 189, 34),(23, 190, 207)] 
-    d['lightInfiniteLineColor']=(100,100,100)
-    d['darkInfiniteLineColor']=(255,255,255)
+    d['data large symbol brush']=None
+    d["truc faux"]=False
 
 
     with open(fname,'w') as f:
         json.dump(d,f,indent=2)
-
-jsonwrite()
 
 def jsonread():
     fname=os.path.join(os.path.dirname(__file__),'GUI config files','style sheet.json')
@@ -23,4 +21,20 @@ def jsonread():
         d1=json.load(f)
     print(d1)
 
+def test_pg():
+    x = np.random.normal(size=1000)
+    y = np.random.normal(size=1000)
+    pg.plot(x, y, pen=None, symbol='o')
+    pg.QtGui.QGuiApplication.exec_()
 
+def pg_example():
+    import pyqtgraph.examples
+    pyqtgraph.examples.run()
+
+def test_func_args(x=1,y=2):
+    print(x,y)
+
+def test_local_file():
+    import GUI_lib
+    GUI_lib.localVariableDic('style sheet.json')
+test_local_file()

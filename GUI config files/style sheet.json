@@ -1,4 +1,21 @@
 {
+  "default theme": "light",
+  "threshold for thin line": 202,
+  "data large width": 3,
+  "data thin width": 1,
+  "data style": "solid",
+  "data symbol": "o",
+  "data symbol brush": null,
+  "trace large width": 2,
+  "trace thin width": 1,
+  "trace style": "dashdot",
+  "trace symbol": null,
+  "trace symbol brush": null,
+  "fit large width": 2,
+  "fit thin width": 2,
+  "fit style": "solid",
+  "fit symbol": null,
+  "fit symbol brush": null,
   "lightPenColors": [
     [
       31,
@@ -113,4 +130,5 @@
     255,
     255
   ]
+  
 }

@@ -3,9 +3,9 @@ import os
 import time
 import traceback
 import json
+import numpy as np
 
-
-from PyQt5 import uic
+from PyQt5 import uic,QtWidgets
 from PyQt5.QtGui import QFont,QTransform,QCloseEvent
 from PyQt5.QtCore import (Qt, QTimer,QSize, QEvent)
 from PyQt5.QtWidgets import (QWidget, QPushButton, QComboBox,
@@ -18,14 +18,14 @@ from pyqt_led import Led as ledWidget #For LED widget
 
 qapp = QApplication(sys.argv)
 
+#Folder to store the config files for each program. If "default" will store in User/Documents/Python/GUI config files
 local_config_files_folder='default'
 
 def localConfigFolder(localFolder):
+    #Returns the folder to store local configuration files. Creates one if it doesn't exist
     if localFolder=='default':
         import platform
-        if platform.system()=='Windows':
-            pass
-        elif platform.system()=='Linux':
+        if platform.system()=='Linux' or platform.system()=='Windows':
             f=os.path.expanduser('~/Documents/Python/GUI config files')
         else :
             raise ValueError('OS %s not supported for now(but you can change that !)'%(platform.system()))
@@ -42,6 +42,8 @@ def localConfigFolder(localFolder):
 
 def localVariableDic(configFileName):
     #Returns a dictionnary with all local variables. If a variable is not present in the local file (after a code update for instance), it will update the local file with the default value form the global file
+    if not configFileName.endswith('.json'):    
+        configFileName+='.json'
     localFolder=localConfigFolder(localFolder=local_config_files_folder)
     localFilename=os.path.join(localFolder,configFileName)
 
@@ -63,42 +65,109 @@ def localVariableDic(configFileName):
             updateLocalFile=True
     if updateLocalFile :
         with open(localFilename,'w') as f:
-            json.dump(dloc,f,indent=0)
+            json.dump(dloc,f,indent=2)
 
     return dloc
 
+def localDesignFile(designFileName: str):   
+    #Returns the path to the local design file. If it doesn't exist, it will create it from the global design file
+    if not designFileName.endswith('.ui'):
+        designFileName+='.ui'
+    localFolder=localConfigFolder(localFolder=local_config_files_folder)
+    localFilename=os.path.join(localFolder,designFileName)
 
+    globalFolder=os.path.join(os.path.dirname(__file__),'GUI design files')
+    globalFilename=os.path.join(globalFolder,designFileName)
 
-
+    if not os.path.exists(localFilename):
+        import shutil
+        shutil.copyfile(globalFilename,localFilename)
+    return localFilename
 
 class styleSheet():
-    def __init__(self,theme='light') -> None:
-        self.theme=theme
-        d=localVariableDic('style sheet.json')
+    def __init__(self,theme='default',configFileName='style sheet.json') -> None:
+        #theme : "light" or "dark". "default" will take the value from the default value from the config file
+        self.d=localVariableDic(configFileName)
+        if theme=='default':
+            theme=self.d['default theme']
+        self.theme=theme     
         if theme=='light':
             #Global Config of pyqtgrqph (dark by default)
             pg.setConfigOption('background', 'w')
             pg.setConfigOption('foreground', 'k')	
             #Default colors of matplotlib		
-            self.penColors=d['lightPenColors']
-            self.infiniteLineColor=d['lightInfiniteLineColor']
+            self.penColors=self.d['lightPenColors']
+            self.infiniteLineColor=self.d['lightInfiniteLineColor']
         if theme=='dark':
             #Global config of pyQT (lifgt by default)
             qapp.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5'))
 
-            self.penColors=d['darkPenColors']
-            self.infiniteLineColor=d['darkInfiniteLineColor']
+            self.penColors=self.d['darkPenColors']
+            self.infiniteLineColor=self.d['darkInfiniteLineColor']
+    """
+    We define bellow the functions returning the plot parameters of each type of line (data,trace,fit).
+    - style : "data", "trace" or "fit"
+    - penIndex (int) is used to know which colour to apply to each line
+    - ydata (np.array) is used because we apply different tchickness for different length of arrays : for an array with a substantial amount of points (eg > 1000), pyqtgraph is significantly faster to plot with a thinner line. Don't ask me why.
+    """
 
+    def lineStyle(self,style : str):
+        #Implemented line styles : "solid", "dash", "dot", "dashdot", "dashdotdot"
+        if style=='solid':
+            return Qt.SolidLine
+        elif style=='dash':
+            return Qt.DashLine
+        elif style=='dot':
+            return Qt.DotLine
+        elif style=='dashdot':
+            return Qt.DashDotLine
+        elif style=='dashdotdot':
+            return Qt.DashDotDotLine
+        
+    def plottingArgs(self,style,penIndex,ydata):
+        n=len(ydata)
+        if style=='data':
+            if n > self.d['threshold for thin line']:
+                width=self.d['data thin width']
+            else :
+                width=self.d['data large width']
+            style=self.lineStyle(self.d['data style'])
+            pen=pg.mkPen(color=self.penColors[penIndex],width=width,style=style)
+            symbol=self.d['data symbol']
+            symbolBrush=pg.mkBrush(self.d['data symbol brush'])
+            return {"pen":pen, "symbol":symbol, "symbolPen":pen, "symbolBrush":symbolBrush}
+        
+        elif style=='trace':
+            if n > self.d['threshold for thin line']:
+                width=self.d['trace thin width']
+            else :
+                width=self.d['trace large width']
+            style=self.lineStyle(self.d['trace style'])
+            pen=pg.mkPen(color=self.penColors[penIndex],width=width,style=style)
+            symbol=self.d['trace symbol']
+            symbolBrush=pg.mkBrush(self.d['trace symbol brush'])
+            return {"pen":pen, "symbol":symbol, "symbolPen":pen, "symbolBrush":symbolBrush}
+        
+        elif style=='fit':
+            if n > self.d['threshold for thin line']:
+                width=self.d['fit thin width']
+            else :
+                width=self.d['fit large width']
+            style=self.lineStyle(self.d['data style'])
+            pen=pg.mkPen(color=self.penColors[penIndex],width=width,style=style)
+            symbol=self.d['fit symbol']
+            symbolBrush=pg.mkBrush(self.d['fit symbol brush'])
+            return {"pen":pen, "symbol":symbol, "symbolPen":pen, "symbolBrush":symbolBrush}
 
-
-
+        
 ''' 
 Plotting GUI with pyQtGraph (pg) :
 
 We follow here the matplotlib nomenclature : 
 - Each graphical widget is constituted of a single figure (pgFig).
-- Each figure con conatin several axes (pgAx) which are subfigures defined by an x and y axis.
+- Each figure can contain several axes (pgAx) which are subfigures defined by an x and y axis.
 - Each ax can contain several lines (pgLine) and infinite lines (work as markers).
+You can bypass the ax level and directly add lines to the figure, this will automaticallty create an ax.
 
 - Maps (pgMap) are a specific object which act as an ax.
 '''
@@ -145,15 +214,16 @@ class generalWidget():
         box.addWidget(self.widget)
 
 class pgFig(generalWidget) :
-    def __init__(self,style :styleSheet, graphicsLayoutWidget='make new', size=(20,15),refreshRate=30,title=None):
-        #refreshRate in fps
+    def __init__(self,style :styleSheet=None, designerWidget=None, size=None,refreshRate=30,title=None):
+        #refreshRate in frames per second
         super().__init__()
+        if style==None:
+            style=styleSheet()
         self.style=style
-        if graphicsLayoutWidget=='make new':
+        if designerWidget==None:
             self.widget=pg.GraphicsLayoutWidget(size=size,title=title)
         else :
-            assert graphicsLayoutWidget.__class__==pg.GraphicsLayoutWidget
-            self.widget=graphicsLayoutWidget
+            self.widget=pg.GraphicsLayoutWidget(title=title,parent=designerWidget,size=[designerWidget.width(),designerWidget.height()])   
         self.axes=[] #Contains axes and maps
         self.refreshRate=refreshRate
         self.timeLastUpdate=time.time()
@@ -163,7 +233,14 @@ class pgFig(generalWidget) :
         else :
             ax=pgAx(title=axTitle, fig=self)
         self.axes+=[ax]
-        self.widget.addItem(row=row, col=col, rowspan=rowspan, colspan=colspan)
+        self.widget.addItem(ax,row=row, col=col, rowspan=rowspan, colspan=colspan)
+        return ax
+    def addLine(self,x=[],y=[],ax=None,style='data',name=None):
+        if len(self.axes)==0:
+            ax=self.addAx()
+        elif ax==None :
+            ax=self.axes[0]
+        ax.addLine(x=x,y=y,style=style,name=name)
     def removeAx(self,ax):
         self.widget.removeItem(ax)
         self.axes.remove(ax)
@@ -174,20 +251,18 @@ class pgAx(pg.PlotItem):
     def __init__(self,title :str, fig :pgFig):
         super().__init__(title=title)
         self.fig=fig
-        #Create the list of available colors
+        #Create the list of available colors (True = available, False = taken)
         self.penIndices=[True]*len(self.fig.style.penColors)
         #Create space for legend
         self.legend=self.addLegend(labelTextSize='15pt')
-        #Create the catalog of lines and infinite lines in the ax
+        #Create the catalog of lines ,infinite lines, traces and fits in the ax
         self.infiniteLines=[]
         self.lines=[]
+        self.traces=[]
+        self.fits=[]
         #Adds the ax to the figure
         self.fig.widget.addItem(self)
-    def addLine(self):
-        pass
-
-class pgLine(pg.PlotDataItem):
-    def __init__(self,ax,x,y,typ='instant',label=None):
+    def addLine(self,x=[],y=[],typ='instant',label=None):
         '''
         typ='instant' : when given a new set of x and y value will replace the previous line
         typ='average' : will add the new x and/or y value to the current line and average with the proper weight
@@ -195,10 +270,148 @@ class pgLine(pg.PlotDataItem):
         typ='trace' : reserved for traces
         typ='fit' : resserved for fits
         '''
+        penIndex=self.nextPenIndex()
+        self.penIndices[penIndex]=False
+        #Creates the line
+        l=pgLine(ax=self,penIndex=penIndex,x=x,y=y,typ=typ,label=label)
+        #Adds the line to the ax
+        self.addItem(l)
+        #Adds the line to the line inventory
+        self.lines+=[l]
+        return l
+    
+    def removeLine(self,line):
+        self.removeItem(line)
+        self.lines.remove(line)
+        if line.existingLegend :
+            self.legend.removeItem(line)
+        self.penIndices[line.penIndex]=True
+        
+    def addTrace(self,line,label=None):
+        t=self.addLine(x=line.x,y=line.y,typ='trace',label=label)
+        self.traces+=[t]
+        return t
+    
+    def removeTrace(self,trace):
+        self.traces.remove(trace)
+        self.removeLine(trace)
+
+    def nextPenIndex(self):
+        for i in range(len(self.penIndices)):
+            if self.penIndices[i]:
+                break
+        return i
+
+class pgLine(pg.PlotDataItem):
+    def __init__(self,ax:pgAx,penIndex,x,y,typ,label):
+        
         self.ax=ax
         self.typ=typ
+        self.penIndex=penIndex
+        self.label=label
+        if len(x)==0:
+            x=np.linspace(0,1,101)
+        if len(y)==0:
+            y=np.zeros(101)
+        self.x=x
+        self.y=y
+        # plotType is used to look for the correct plotting parameters in the styleSheet
+        if self.typ=='instant' or self.typ=='average' or self.typ=='scroll' :
+            self.plotType='data'
+        else :
+            self.plotType=self.typ
+        self.ss=self.ax.fig.style
+        #Collects the plotting parameters for the line
+        plotArgs=self.ss.plottingArgs(style=self.plotType,penIndex=self.penIndex,ydata=self.y)
 
-        super().__init__()
+        #Creates the line item (Pg.PlotDataItem)
+        super().__init__(x,y,**plotArgs)
+        #Adds a legend if provided
+        self.existingLegend=False
+        self.updateLegend(label)
+
+        self.nIteration=0 
+        self.norm=False #Norm only affects display, the data is always stored with its real value
+
+
+
+    def setNorm(self,norm=True):
+        self.norm=norm
+
+    def updateLegend(self,label):
+        if label :
+            if self.existingLegend :
+                self.ax.legend.removeItem(self)
+                self.ax.legend.addItem(self,label)
+            else :
+                self.existingLegend=True
+                self.ax.legend.addItem(self,label)
+
+    def update(self,x=[],y=[],bypassRefresh=False):
+        """
+        Leave x or y as [] if you dont want to change them.
+
+        Basis of updating line for each type :
+        instant/trace/data : will simply plot the new x and/or y value instead of the old ones
+        average : will average the new y values with the previous ones. If new x is given will simply replace old x
+        scroll : take a list of new y and/or x points to add to the end of the line. E.g. y=[12.0] will just add one point at the end of the line and delete the first point. If you update x with values inferiors to the previous ones, you are looking for troubles
+        """
+        #bypassRefresh will show the updated line regardless of the time delay since the laste update
+        self.nIteration+=1
+        #We should by default use numpy arrays, but just in case
+        if isinstance(y,list):
+            y=np.array(y)
+        if isinstance(x,list):
+            x=np.array(x)
+
+        if len(x)==0:
+            pass
+        else :
+            if self.typ=='scroll':
+                n=len(x)
+                newX=np.roll(self.x,-n)
+                newX[-n:]=x
+            else :
+                newX=x
+
+            self.x=newX
+
+        if len(y)==0:
+            pass
+        else :
+            if self.typ=='average':
+                oldY=self.y
+                if self.nIteration==1:
+                    newY=y #This is required because the placeholder y does not have the same length as the new y
+                else :
+                    newY=oldY*(1-1/self.nIteration)+y*1/self.nIteration
+            elif self.typ=='scroll':
+                n=len(y)
+                assert n <= len(self.y) #Checks there are less new values than total displayed values
+                if self.nIteration==1: #For a new scroll line, ensure that all the initial values are of the  same order of the measured ones
+                    self.y=np.ones(len(self.y))*y[0]
+                newY=np.roll(self.y,-n)
+                newY[-n:]=y
+            else :
+                newY=y
+
+            self.y=newY
+
+        if time.time()>self.ax.fig.timeLastUpdate + 1/self.ax.fig.refreshRate or bypassRefresh:
+            show=True
+            self.ax.fig.timeLastUpdate=time.time()
+        else :
+            show=False
+
+
+        if show :
+            plotArgs=self.ss.plottingArgs(style=self.plotType,penIndex=self.penIndex,ydata=self.y)
+            if self.norm :
+                yToPlot=self.y/max(y)
+            else :
+                yToPlot=self.y
+            self.setData(self.x,yToPlot,**plotArgs)
+
 
 class pgMap(pg.ImageItem):
     def __init__(self, image=None, **kargs):
@@ -215,7 +428,7 @@ class Graphical_interface(QMainWindow) :
         self.keyReleased=keyReleased #Same for released key
 
         if designerFile :
-            uic.loadUi("python/Perso/testUI.ui", self)
+            uic.loadUi(designerFile, self)
         else :
             self.setWindowTitle(title)
             main = QFrame()
@@ -238,8 +451,7 @@ class Graphical_interface(QMainWindow) :
             elif size=='auto' :
                 pass
             else :
-                self.resize(size[0],size[1])
-        self.show()		
+                self.resize(size[0],size[1])	
     def keyPressEvent(self, e):
         #See example in Plot_data
         if self.keyPressed=='default':
@@ -257,6 +469,7 @@ class Graphical_interface(QMainWindow) :
         style='QFrame {background-color: %s ;}'%(backgroundColor)
         self.widget.setStyleSheet(style)
     def run(self):
+        self.show()
         qapp.exec_()
     def closeEvent(self, event): 
         self.close()
@@ -312,6 +525,7 @@ class box(generalWidget):
             except:
                 pass
     def resize(self,height='min',width='min'):
+        #Resize for boxes resize each item with the given values. 
         for item in self.items:
             item.resize(height=height,width=width)
     def addToBox(self, box):
@@ -329,10 +543,13 @@ class label(generalWidget):
         return self.widget.text()
 
 class button(generalWidget):
-    def __init__(self,name,action=False): 
+    def __init__(self,name,action=False,designerWidget:QPushButton=False): 
         super().__init__()
-        self.widget=QPushButton(name)
-        self.resize()
+        if designerWidget : 
+            self.widget=designerWidget
+        else :
+            self.widget=QPushButton(name)    
+            self.resize()  
         if action :
             self.setAction(action)        
     def setAction(self,action,actionType='clicked'):
@@ -342,6 +559,55 @@ class button(generalWidget):
             self.widget.pressed.connect(action)
         elif actionType=='released' :
             self.widget.released.connect(action)
+
+class startStopButtons(box):
+    """
+    This class creates two buttons to start and stop timed actions.
+    The start button first calls initAction, then create a Qtimer instance which will call repeatdly updateAction every time it times out.
+    The stop button stops the timer and calls stopAction.
+    initAction and stopAction take the arguments given in initArgs and stopArgs respectively. The arguemnts must be given as a dictionary with the key as the argument name and the value as the argument value.
+    updateAction takes a single argument which is the iteration number of the timer.
+    timerDelay is the delay between each call of updateAction in ms.
+    """
+    def __init__(self,initAction=False,updateAction=False,stopAction=False,initArgs={},stopArgs={},startDesignerWidget=None,stopDesignerWidget=None, timerDelay=0):
+        self.initAction=initAction
+        self.updateAction=updateAction
+        self.stopAction=stopAction
+        self.initArgs=initArgs
+        self.stopArgs=stopArgs
+        self.timerDelay=timerDelay
+        self.startButton=button('Start',action=self.start,designerWidget=startDesignerWidget)
+        self.stopButton=button('Stop',action=self.stop,designerWidget=stopDesignerWidget)
+        self.stopButton.setEnabled(False)
+        super().__init__(self.startButton,self.stopButton,typ='V')
+        self.iteration=0
+
+    def start(self):
+        self.startButton.setEnabled(False)
+        self.stopButton.setEnabled(True)
+        if self.initAction :
+            self.initAction(**self.initArgs)
+        self.timer=QTimer()
+        self.timer.timeout.connect(self.update)
+        self.timer.start(self.timerDelay)
+    
+    def update(self):
+        self.iteration+=1
+        self.updateAction(self.iteration)
+
+    def stop(self):
+        self.timer.stop()
+        self.startButton.setEnabled(True)
+        self.stopButton.setEnabled(False)
+        if self.stopAction :
+            self.stopAction(**self.stopArgs)
+        self.iteration=0
+        
+class saveButton(button):
+    def __init__(self,designerWidget=None,saveConfigFile="default_save_config.json"):
+        super().__init__("Save",action=self.save,designerWidget=designerWidget)
+    def save(self):
+        self.saveFunction()
 
 class led(generalWidget):
     def __init__(self,shape="circle",radius=20):
@@ -491,12 +757,12 @@ class mpt_colormap(generalWidget):
     def __init__(self):
         super().__init__()
 
-def repr_numbers(value,precision='exact'):
+def repr_numbers(value,precision='exact',maxScientficExponent=4,minScientficExponent=-2):
     if isinstance(value,str):
         label=(value)
     elif value==0:
         label=('0')
-    elif abs(value)>1E4 or abs(value) <1E-1 :
+    elif abs(value)>10**maxScientficExponent or abs(value) <10**minScientficExponent :
         if precision=='exact' :
             label=('%e'%value)
         else :
@@ -509,29 +775,6 @@ def repr_numbers(value,precision='exact'):
         else :
             label=('{:.{}f}'.format(value,precision))
     return label
-
-def test_pg():
-
-    def dummyf(e):
-        pos=e[0]
-        print(pos.pos())
-
-
-    f1=field('toto',10)
-    f2=field('toto2',5)
-    fields=[f1,f2]
-
-    b1=buttonWithLed('test button')
-    def b1_action():
-        print(f1.getValue())
-        print(qapp.activeWindow().title)
-        return
-    b1.setAction(b1_action)
-
-    buttons=[b1]
-    GUI=Graphical_interface(fields,buttons,title='Example GUI')
-    # print(dir(GUI))
-    GUI.run()
 
 def whereIsFocus(oldWidget,newWidget):
     print('old widget:')
@@ -547,5 +790,103 @@ def changeColorWhenInFocus(oldWidget,newWidget):
         style='background-color: palette(base)'
         oldWidget.setStyleSheet(style)
 
+def firstInitDic(configFileName):
+    #Not that useful honestly, just fill manually
+    localFolder=localConfigFolder(localFolder=local_config_files_folder)
+    localFilename=os.path.join(localFolder,configFileName)
+
+    try:
+        ss=styleSheet()
+        ydata=np.zeros(200)
+        penIndex=0
+        ss.dataStyle(ydata=ydata,penIndex=penIndex)
+    except KeyError as err:
+        key=str(err.args[0])
+        print("new key %s"%key)
+        with open(localFilename,'r') as f:
+            dloc=json.load(f)
+        dloc[key]='TBD'
+        with open(localFilename,'w') as f:
+            json.dump(dloc,f,indent=2)
+
+def testWithDesigner():
+    GUI=Graphical_interface(designerFile="/home/clement/Postdoc/python/Perso/testUI.ui")
+
+    # class MainWindow(QtWidgets.QMainWindow):
+    #     def __init__(self, *args, **kwargs):
+    #         super().__init__(*args, **kwargs)
+    #         uic.loadUi('/home/clement/Postdoc/python/Perso/testUI.ui', self)
+    # GUI=MainWindow()
+
+
+    gra=pgFig(designerWidget=GUI.gra)
+    ax=gra.addAx()
+    x=np.linspace(0,10,101)
+    y=np.cos(x)
+    # l1=pgLine(x=x,y=y,ax=ax,penIndex=0,typ='instant',label=None)
+    l1=ax.addLine(x=x,y=y,typ='instant',label=None)
+
+    def update(i):
+        y=np.cos(x+time.time())
+        l1.update(y=y)
+    def init():
+        print('init')
+    def cleanUp():
+        print('cleanUp')
+    startStop=startStopButtons(initAction=init,stopAction=cleanUp,updateAction=update,startDesignerWidget=GUI.start,stopDesignerWidget=GUI.stop)
+
+    GUI.show()
+    qapp.exec_()
+
+def testpgFig():
+    ss=styleSheet()
+    gra=pgFig(style=ss)
+    ax=gra.addAx()
+    x=np.linspace(0,10,101)
+    y=np.cos(x)
+    y2=np.sin(x)
+    
+    l1=pgLine(x=x,y=y2,ax=ax,penIndex=0,typ='instant',label=None)
+    ax.addItem(l1)
+    gra.widget.show()
+    qapp.exec_()
+    # pg.QtGui.QGuiApplication.exec_()
+    # l1=ax.addLine(x,y)
+    # GUI=Graphical_interface(gra,title='Example GUI')
+    # GUI.run()
+
+def test_pg():
+
+
+    f1=field('toto',10)
+    f2=field('toto2',5)
+    fields=[f1,f2]
+
+    b1=buttonWithLed('test button')
+    def b1_action():
+        print(f1.getValue())
+        print(qapp.activeWindow().title)
+        return
+    b1.setAction(b1_action)
+
+    fig=pgFig()
+    ax=fig.addAx()
+    x=np.linspace(0,10,101)
+    y=np.cos(x)
+    l1=ax.addLine(x=x,y=y,typ='instant',label=None)
+
+    def update(i):
+        y=np.cos(x+time.time())
+        l1.update(y=y)
+    def init():
+        print('init')
+    def cleanUp():
+        print('cleanUp')
+    startStop=startStopButtons(initAction=init,stopAction=cleanUp, updateAction=update)
+    buttons=[b1,startStop]
+    GUI=Graphical_interface(fields,fig,buttons,title='Example GUI')
+    # print(dir(GUI))
+    GUI.run()
+
 if __name__ == "__main__":
-    localConfigFolder(localFolder=local_config_files_folder)
+    testWithDesigner()

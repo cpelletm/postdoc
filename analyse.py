@@ -129,9 +129,13 @@ def extract_data(filename,xcol=0,ycol=1,exclude_neg=False,data='line',delimiter=
 
 
 #~~~~ Fits ~~~~
-def lin_fit(x,y) :
+def lin_fit(x=[],y=[]) :
 	x=np.array(x)
 	y=np.array(y)
+	if len(x)!=len(y) :
+		print("no x given or wrong size (len(x)=%i and len(y)=%i)"%(len(x),len(y)))
+		x=np.arange(len(y))
+
 	A=np.vstack([x,np.ones(len(x))]).T
 	a,b = np.linalg.lstsq(A, y, rcond=None)[0]
 	return([a,b],a*x+b)
@@ -1183,25 +1187,68 @@ def extract_2d(fname):
 				pass
 	return(np.array(data))
 
-def print_map(array,xmin=0,xmax=1,ymin=0,ymax=1):
-	xsize=len(array[:,0])
-	ysize=len(array[0,:])
-	arrayToPlot=np.zeros((xsize+1,ysize+1))
-	for i in range(xsize):
-		for j in range(ysize):
-			arrayToPlot[i,j]=array[i,j]
-	x_axis=np.linspace(xmin,xmax,xsize+1)
-	y_axis=np.linspace(ymin,ymax,ysize+1)
-	fig,ax=plt.subplots()
-	c=ax.pcolormesh(x_axis, y_axis, arrayToPlot.T)
-	cb=fig.colorbar(c,ax=ax)
-	plt.show()
+def gradientCompensation(data2D):
+	lavg=sum(data2D[:,i] for i in range(len(data2D[0,:])))/len(data2D[0,:])
+	cavg=sum(data2D[i,:] for i in range(len(data2D[:,0])))/len(data2D[:,0])
+	[a1,b],lfit=lin_fit(y=lavg)
+	lxfit=np.arange(len(lfit))
+	[a2,b],cfit=lin_fit(y=cavg)
+	cxfit=np.arange(len(cfit))
 
-def print_map_2(array,x_axis,y_axis):
-	fig,ax=plt.subplots()
-	c=ax.pcolormesh(x_axis, y_axis, array.T)
-	cb=fig.colorbar(c,ax=ax)
+	for i in range(len(data2D[:,0])):
+		for j in range(len(data2D[0,:])):
+			data2D[i,j]-=a1*lxfit[i]+a2*cxfit[j]
+	return(data2D)
+
+def plot_map(C:np.array, xAxis=[], yAxis=[], color='viridis',xBeforeY=True,invertX=True,invertY=True,flipXY=True,squarePixels=True,correctGradient=False, vmin=None, vmax=None, xlabel='X voltage (V)',ylabel='Y voltage (V)'):
+	#color : "viridis", "Blues_r", "bwr" ...
+	#xBeforeY : Specifies wether the lines in the 2D array [[l1],[l2],...] are scanned along x (True) or y (False)
+	#invertX/Y: inverts the x/y axis (biggest values on tthe lefet)
+	#flipXY : flips the x and y axes
+	#squarePixels : Ensure that the pixels are squared (in the future, maybe put a ratio of x/y length for each pixel)
+	#correctGradient : compensate the gradients (1st order) in both x and y
+	#vmin/max : min/max values on the scale
+	#x/y label : label of the x and y axes
+
+	if not xBeforeY :
+		#Confusing but the goal is to always have x as the columns (horizontal axis) and y as the rows (vertical axis).
+		#This means that the items of C or organized following C[i_y,i_x]
+		C=C.T    
+
+	nx,ny=C.shape
+	if len(xAxis)==0:
+		xAxis=np.linspace(0,1,nx+1)
+	elif len(xAxis)!=nx+1:
+		xAxis=np.linspace(xAxis[0],xAxis[-1],nx+1)
+	if len(yAxis)==0:
+		yAxis=np.linspace(0,1,ny+1)
+	elif len(yAxis)!=ny+1:
+		yAxis=np.linspace(yAxis[0],yAxis[-1],ny+1)
+	  
+	if flipXY :
+		C=C.T
+		xAxis,yAxis=yAxis,xAxis
+		xlabel,ylabel=ylabel,xlabel
+	if correctGradient :
+		C=gradientCompensation(C)
+	
+
+
+	fig, ax = plt.subplots()
+	if squarePixels :
+		ax.set_aspect('equal')
+	scan=ax.pcolormesh(yAxis,xAxis,C,cmap=color,vmin=vmin,vmax=vmax)
+	if invertX :
+		ax.invert_xaxis()
+	if invertY :
+		ax.invert_yaxis()
+	ax.set_xlabel(xlabel)
+	ax.set_ylabel(ylabel)
+	plt.colorbar(mappable=scan,ax=ax)
+	fig.set_tight_layout(tight=True)
 	plt.show()
+	
+
 
 #~~~~~~ Présentation ~~~~~~
 
