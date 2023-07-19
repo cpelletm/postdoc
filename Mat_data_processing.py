@@ -103,15 +103,42 @@ class NVAFM_scan_matFile(matFile):
             self.dataDic[reg+' forward']=self.data(nForward=1,nRegin=i)
             self.dataDic[reg+' backward']=self.data(nForward=0,nRegin=i)
 
+    def plotAxisParam(self,axisUnits='um'):
+        #For clarity we will refer here to the horizontal and vertical axis instead of the x and y axis
+        #The horizontal axis is the one that is scanned first
+        hLabel=self.sm['Scanner'].item()['ScanData'].item(0)['loop'].item(0)[2][0]
+        hLimits=self.sm['Scanner'].item()['ScanData'].item(0)['loop'].item(0)[2][1]
+        hn=self.sm['Scanner'].item()['ScanData'].item(0)['loop'].item(0)[2][2]
+        hrange=np.linspace(hLimits[0],hLimits[1],hn)
+
+        vLabel=self.sm['Scanner'].item()['ScanData'].item(0)['loop'].item(0)[1][0]
+        vLimits=self.sm['Scanner'].item()['ScanData'].item(0)['loop'].item(0)[1][1]
+        vn=self.sm['Scanner'].item()['ScanData'].item(0)['loop'].item(0)[1][2]
+        vrange=np.linspace(vLimits[0],vLimits[1],vn)
+
+        if axisUnits=='um':
+            hrange*=2
+            vrange*=2
+            hLabel=hLabel[-1]+' axis (um)'
+            vLabel=vLabel[-1]+' axis (um)'
+        elif axisUnits=='V':
+            pass
+        else :
+            raise ValueError('Wrong axisUnits')
+
+        return hLabel,vLabel,hrange,vrange
+        
+
     def findRange(self,excludeNan=False,data=None):
+        # Not used anymore
         self.xmin=float(self.scdata['ed_xmin'].item())
         self.xmax=float(self.scdata['ed_xmax'].item())
         self.nx=int(self.scdata['nx'].item())
         self.ymin=float(self.scdata['ed_ymin'].item())
         self.ymax=float(self.scdata['ed_ymax'].item())
         self.ny=int(self.scdata['ny'].item())
-        self.xplot=np.linspace(self.xmin,self.xmax,self.nx+1) #+1 because matplotlib colormesh is weird
-        self.yplot=np.linspace(self.ymin,self.ymax,self.ny+1)
+        self.xplot=np.linspace(self.xmin,self.xmax,self.nx)
+        self.yplot=np.linspace(self.ymin,self.ymax,self.ny)
         if excludeNan:
             for i in range(self.ny):
                 if np.isnan(data[i,0]) :
@@ -123,8 +150,8 @@ class NVAFM_scan_matFile(matFile):
                     self.nx=j
                     self.xmax=self.xplot[j-1]
                     break
-            self.xplot=np.linspace(self.xmin,self.xmax,self.nx+1)
-            self.yplot=np.linspace(self.ymin,self.ymax,self.ny+1)
+            self.xplot=np.linspace(self.xmin,self.xmax,self.nx)
+            self.yplot=np.linspace(self.ymin,self.ymax,self.ny)
             
     def xBeforeY(self):
         loopOrder=self.scdata['loopOrder'].item()
@@ -134,22 +161,20 @@ class NVAFM_scan_matFile(matFile):
         #nForward = 1 : forward : =0 : backward
         #nRegin= according to the regin list
         data=self.sm['Scanner'].item()['ScanData'].item(0)['data'].item()['dir'].item(nRegin)['data'].item(1-nForward)
-        if self.xBeforeY() :
-            return data
-        else :
-            return data.T
+        return data
     
-    def plot(self,dataKey='Vz forward',excludeNan=True,invertX=True,invertY=True,flipXY=True,squarePixels=True,correctGradient=False, vmin=None, vmax=None):
+    def plot(self,dataKey='Vz forward',color='default', invertV=True,invertH=True,flipHV='auto', squarePixels=True,correctGradient=False, vmin=None, vmax=None, centerColorBar=None, figSize=None, removeCb=False):
         ctrMap="viridis"
         VzMap="viridis" #"Blues_r"
-        magnetoMap="bwr"
+        magnetoMap="bwr_r"
         cmaps={"Vz forward":VzMap,"Vz backward":VzMap,'Counter1 forward':ctrMap, 'Counter1 backward':ctrMap, 'Counter2 forward':ctrMap, 'Counter2 backward':ctrMap, 'Norm forward' :magnetoMap, 'Norm backward':magnetoMap, 'Diff forward':magnetoMap, 'Diff backward':magnetoMap, 'RFFreq forward':magnetoMap, 'RFFreq backward':magnetoMap}
+        if color=='default':
+            color=cmaps[dataKey]
         C=self.dataDic[dataKey]
-        self.findRange(excludeNan=excludeNan,data=C)
-        C=C[:self.ny,:self.nx]
-        xlabel='X voltage (V)'
-        ylabel='Y voltage (V)'
-        analyse.plot_map(C=C,xAxis=self.xplot,yAxis=self.yplot,color=cmaps[dataKey],xBeforeY=self.xBeforeY(),invertX=invertX,invertY=invertY, flipXY=flipXY, squarePixels=squarePixels,correctGradient=correctGradient,vmin=vmin,vmax=vmax,xlabel=xlabel,ylabel=ylabel)
+        hLabel,vLabel,hrange,vrange=self.plotAxisParam()
+        if flipHV=='auto':
+            flipHV=self.xBeforeY()
+        analyse.plot_map(C=C,vAxis=vrange, hAxis=hrange, color=color,invertV=invertV,invertH=invertH,flipHV=flipHV,squarePixels=squarePixels,correctGradient=correctGradient,vmin=vmin,vmax=vmax,hlabel=hLabel,vlabel=vLabel,colorBarLabel=dataKey,centerColorBar=centerColorBar,figSize=figSize,removeCb=removeCb)
 
 class NVAFM_RFscan_matFile(matFile):
     keys=['__header__', '__version__', '__globals__', 'smNVscan_new', '__function_workspace__']
@@ -174,6 +199,7 @@ class NVAFM_RFscan_matFile(matFile):
 
         f=self.sm['Scanner'].item()['ScanCreate'].item(0)['scData'].item()['Fields'].item()
         self.xmin,self.xmax,self.ymin,self.ymax=f['ed_xmin'].item(),f['ed_xmax'].item(),f['ed_ymin'].item(),f['ed_ymax'].item()
+        
         self.nx,self.ny,self.nz=f['nx'].item(),f['ny'].item(),f['nz'].item()
         self.xrange=np.linspace(self.xmin,self.xmax,self.nx)
         self.yrange=np.linspace(self.ymin,self.ymax,self.ny)
@@ -199,6 +225,13 @@ class NVAFM_RFscan_matFile(matFile):
             i=iy+self.ny*ix
         return i
     
+    def centerFreqArray(self):
+        a=np.zeros((self.nx,self.ny))
+        for i in range(len(self.centerFreq)):
+            ix,iy=self.indexToXY(i)
+            a[ix,iy]=self.centerFreq[i]
+        return a
+
     def VzLine(self,nLine=0):
         if self.xBeforeY():
             l=np.zeros(self.nx)
@@ -329,7 +362,13 @@ class NVAFM_sweeper(matFile):
 
 if __name__=='__main__':
     t=NVAFM_scan_matFile(fileScan)
-    t.plot(excludeNan=True)
+    data=t.dataDic['Vz forward']
+    t.plot()
+    # import tabulate
+    # with open('/home/clement/Postdoc/python/Perso/Test file.txt','w') as f:
+    #     f.write(tabulate.tabulate(data,tablefmt='plain'))
+
+
 
    
     

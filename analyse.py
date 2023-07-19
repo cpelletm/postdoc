@@ -80,16 +80,16 @@ def extract_data(filename,xcol=0,ycol=1,exclude_neg=False,data='line',delimiter=
 			xdata=[]
 			for item in x :
 				try :
-					xdata+=[np.float(item)]
+					xdata+=[float(item)]
 				except :
 					pass
 			y=content[ycol]
 			y=y.split()
-			y=[np.float(item) for item in y]
+			y=[float(item) for item in y]
 			ydata=[]
 			for item in y :
 				try :
-					ydata+=[np.float(item)]
+					ydata+=[float(item)]
 				except :
 					pass
 		return(np.array(xdata),np.array(ydata))
@@ -102,8 +102,8 @@ def extract_data(filename,xcol=0,ycol=1,exclude_neg=False,data='line',delimiter=
 			ydata=[]
 			for line in reader:
 				try :
-					xdata+=[np.float(line[xcol])]
-					ydata+=[np.float(line[ycol])]
+					xdata+=[float(line[xcol])]
+					ydata+=[float(line[ycol])]
 				except :
 					continue #pass marcherait aussi mais je me la pète
 		return(np.array(xdata),np.array(ydata))
@@ -1200,53 +1200,62 @@ def gradientCompensation(data2D):
 			data2D[i,j]-=a1*lxfit[i]+a2*cxfit[j]
 	return(data2D)
 
-def plot_map(C:np.array, xAxis=[], yAxis=[], color='viridis',xBeforeY=True,invertX=True,invertY=True,flipXY=True,squarePixels=True,correctGradient=False, vmin=None, vmax=None, xlabel='X voltage (V)',ylabel='Y voltage (V)'):
+def plot_map(C:np.array, vAxis=[], hAxis=[], color='viridis',invertV=False,invertH=False,flipHV=False,squarePixels=True,correctGradient=False, vmin=None, vmax=None, vlabel='Y voltage (V)',hlabel='X voltage (V)',colorBarLabel='', centerColorBar=None, figSize=None, removeCb=False, show=True, hlim=None, vlim=None):
 	#color : "viridis", "Blues_r", "bwr" ...
-	#xBeforeY : Specifies wether the lines in the 2D array [[l1],[l2],...] are scanned along x (True) or y (False)
 	#invertX/Y: inverts the x/y axis (biggest values on tthe lefet)
 	#flipXY : flips the x and y axes
 	#squarePixels : Ensure that the pixels are squared (in the future, maybe put a ratio of x/y length for each pixel)
 	#correctGradient : compensate the gradients (1st order) in both x and y
 	#vmin/max : min/max values on the scale
 	#x/y label : label of the x and y axes
+	#colorBarLabel : label of the colorbar
 
-	if not xBeforeY :
-		#Confusing but the goal is to always have x as the columns (horizontal axis) and y as the rows (vertical axis).
-		#This means that the items of C or organized following C[i_y,i_x]
-		C=C.T    
-
-	nx,ny=C.shape
-	if len(xAxis)==0:
-		xAxis=np.linspace(0,1,nx+1)
-	elif len(xAxis)!=nx+1:
-		xAxis=np.linspace(xAxis[0],xAxis[-1],nx+1)
-	if len(yAxis)==0:
-		yAxis=np.linspace(0,1,ny+1)
-	elif len(yAxis)!=ny+1:
-		yAxis=np.linspace(yAxis[0],yAxis[-1],ny+1)
+	nv,nh=np.shape(C)
+	if len(vAxis)==0:
+		vAxis=np.linspace(0,1,nv)
+	elif len(vAxis)!=nv:
+		vAxis=np.linspace(vAxis[0],vAxis[-1],nv)
+	if len(hAxis)==0:
+		hAxis=np.linspace(0,1,nh)
+	elif len(hAxis)!=nh:
+		hAxis=np.linspace(hAxis[0],hAxis[-1],nh)
 	  
-	if flipXY :
+	if flipHV :
 		C=C.T
-		xAxis,yAxis=yAxis,xAxis
-		xlabel,ylabel=ylabel,xlabel
+		hAxis,vAxis=vAxis,hAxis
+		hlabel,vlabel=vlabel,hlabel
 	if correctGradient :
 		C=gradientCompensation(C)
 	
-
-
-	fig, ax = plt.subplots()
+	fig, ax = plt.subplots(figsize=figSize)
 	if squarePixels :
 		ax.set_aspect('equal')
-	scan=ax.pcolormesh(yAxis,xAxis,C,cmap=color,vmin=vmin,vmax=vmax)
-	if invertX :
+	if vmin is None :
+		vmin=np.nanmin(C)
+	if vmax is None :
+		vmax=np.nanmax(C)
+	if centerColorBar is not None :
+		Delta=max(abs(vmin-centerColorBar),abs(vmax-centerColorBar))
+		vmin=centerColorBar-Delta
+		vmax=centerColorBar+Delta
+	scan=ax.pcolormesh(hAxis,vAxis,C,cmap=color,vmin=vmin,vmax=vmax,shading='nearest')
+
+	if invertV :
 		ax.invert_xaxis()
-	if invertY :
+	if invertH :
 		ax.invert_yaxis()
-	ax.set_xlabel(xlabel)
-	ax.set_ylabel(ylabel)
-	plt.colorbar(mappable=scan,ax=ax)
+	ax.set_xlabel(vlabel)
+	ax.set_ylabel(hlabel)
+	if hlim is not None :
+		ax.set_xlim(hlim)
+	if vlim is not None :
+		ax.set_ylim(vlim)
+	cb=plt.colorbar(mappable=scan,ax=ax,label=colorBarLabel)
 	fig.set_tight_layout(tight=True)
-	plt.show()
+	if removeCb :
+		cb.remove()
+	if show :
+		plt.show()
 	
 
 

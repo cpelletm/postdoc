@@ -37,4 +37,5 @@ def test_func_args(x=1,y=2):
 def test_local_file():
     import GUI_lib
     GUI_lib.localVariableDic('style sheet.json')
-test_local_file()
+
+print([0,15] is None)
