@@ -10,6 +10,9 @@ from scipy import fftpack, io
 from PyQt5.QtWidgets import QApplication,QFileDialog
 from numpy import sqrt,pi,cos,sin,exp,log
 from numpy.linalg import norm
+import qcodes as qc
+import pandas as pd
+
 
 
 
@@ -188,7 +191,10 @@ def gauss_fit(x,y,amp=None,x0=None,sigma=None,ss=0,err=False) :
 		else :
 			amp=min(y)-ss
 	if not x0 :
-		x0=x[int(len(x)/2)]
+		if amp > 0 :
+			x0=x[list(y).index(max(y))]
+		else :
+			x0=x[list(y).index(min(y))]
 	if not sigma :
 		sigma=x[int(len(x)/5)]-x[0]
 	def f(x,amp,x0,sigma,ss) : #HWHM=1.18*sigma (sqrt(2*ln(2)))
@@ -232,11 +238,45 @@ def lor_fit(x,y,amp=None,x0=None,sigma=None,ss=None,err=False) :
 		else :
 			amp=min(y)-ss
 	if not x0 :
-		x0=x[int(len(x)/2)]
+		if amp > 0 :
+			x0=x[list(y).index(max(y))]
+		else :
+			x0=x[list(y).index(min(y))]
 	if not sigma :
 		sigma=x[int(len(x)/5)]-x[0]
 	def f(x,amp,x0,sigma,ss) :
 		return ss+amp*1/(1+((x-x0)/(sigma))**2)
+	p0=[amp,x0,sigma,ss]
+	popt, pcov = curve_fit(f, x, y, p0)
+	if err :
+		return(popt,f(x,*popt),np.sqrt(np.diag(pcov)))
+	else :
+		return(popt,f(x,*popt))
+
+def ESR_1peak_PL_fit(x,y,amp=None,x0=None,sigma=None,func='lor',ss=None,err=False) :
+	#Assumes that the peak is negative in value
+	if x0 is None :
+		x0=x[list(y).index(min(y))]
+	if ss is None :
+		if x0 > x[int(len(x)/2)] :
+			ss=y[0]
+		else :
+			ss=y[-1]
+	if amp is None :
+		amp=min(y)-ss
+	if sigma is None :
+		if abs(x[-1]-x[0]) >= 10 :
+			#Assumes unit of MHz
+			sigma=10
+		else :
+			#Assumes unit of GHz
+			sigma=0.01
+	if func=='lor' :
+		def f(x,amp,x0,sigma,ss) :
+			return ss+amp*1/(1+((x-x0)/(sigma))**2)
+	elif func=='gauss' :
+		def f(x,amp,x0,sigma,ss) :
+			return amp*np.exp(-(x-x0)**2/(2*sigma**2))+ss
 	p0=[amp,x0,sigma,ss]
 	popt, pcov = curve_fit(f, x, y, p0)
 	if err :
