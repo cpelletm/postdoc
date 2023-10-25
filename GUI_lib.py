@@ -902,7 +902,7 @@ def changeColorWhenInFocus(oldWidget,newWidget):
         oldWidget.setStyleSheet(style)
 
 def testWithDesigner():
-    GUI=Graphical_interface(designerFile="/home/clement/Postdoc/python/Perso/testUI.ui")
+    GUI=Graphical_interface(designerFile=localDesignFile('testUI.ui'),title='Example GUI')
 
     # class MainWindow(QtWidgets.QMainWindow):
     #     def __init__(self, *args, **kwargs):
