@@ -14,6 +14,7 @@ filePLtrace=exampleFolder+'/Example time trace charac.mat'
 fileRFscan=exampleFolder+'/Example RF scan.mat'
 fileFeedback=exampleFolder+'/Example feedback.mat'
 fileScanFeedback=exampleFolder+'/Example scan feedback'
+fileSpectrum=exampleFolder+'/Example spectrum.mat'
 
 def headers(obj):
     return(list(obj.dtype.fields.keys()))
@@ -87,7 +88,15 @@ class NVAFM_ESR_matFile(matFile):
     def fitParams(self): #center,width, contrast (GHz,GHz,%)
         return(self.Aux['Fitpos'].item(),self.Aux['FitFWHM'].item(),self.Aux['Fitcontrast'].item())
 
-class NVAFM_scan_matFile(matFile):
+class NVAFM_spectrum_matFile(matFile):
+    def __init__(self, pathToFile) -> None:
+        super().__init__(pathToFile)
+        self.counts=self.matDic['smSpect']['Data'].item()['data'].item()
+        self.wavelengths=self.matDic['smSpect']['Data'].item()['wavelength'].item()
+
+
+
+class NVAFM_scan_matFile(matFile):  
     keys=['__header__', '__version__', '__globals__', 'smNVscan', '__function_workspace__']
     def __init__(self, pathToFile) -> None:
         super().__init__(pathToFile)
@@ -192,7 +201,7 @@ class NVAFM_RFscan_matFile(matFile):
                 break
             else :
                 self.nScans+=1
-      
+
 
         self.dt=self.sm['Scanner'].item()['ScanData'].item(0)['esr'].item()['dt'].item()
         self.power=self.sm['Scanner'].item()['ScanData'].item(0)['esr'].item()['power'].item()
@@ -213,14 +222,14 @@ class NVAFM_RFscan_matFile(matFile):
     def indexToXY(self,i):
         if self.xBeforeY():
             ix=i%self.nx
-            iy=i//self.ny
+            iy=i//self.nx         
         else :
-            ix=i//self.nx
+            ix=i//self.ny
             iy=i%self.ny
         return ix,iy
     def xyToIndex(self,ix,iy):
         if self.xBeforeY():
-            i=ix+self.nx*iy
+            i=ix+self.nx*iy          
         else :
             i=iy+self.ny*ix
         return i
@@ -232,14 +241,26 @@ class NVAFM_RFscan_matFile(matFile):
             a[ix,iy]=self.centerFreq[i]
         return a
 
-    def VzLine(self,nLine=0):
+    def VzMap(self):
+        a=np.zeros((self.nx,self.ny))
+        for i in range(len(self.Vz)):
+            ix,iy=self.indexToXY(i)
+            a[ix,iy]=self.Vz[i]
+        return a
+
+
+    def ESRCentralFreqLine(self,nLine=0,excludeNan=True,refit=False):
         if self.xBeforeY():
             l=np.zeros(self.nx)
             t=np.linspace(self.xmin,self.xmax,self.nx)
             for ix in range(self.nx):
                 i=self.xyToIndex(ix=ix,iy=nLine)
                 if i<self.nScans :
-                    l[ix]=self.Vz[i]
+                    if refit :
+                        popt,yfit=analyse.ESR_1peak_PL_fit(self.allFreqs[i],self.allESRData[i])
+                        l[ix]=popt[1]
+                    else :
+                        l[ix]=self.centerFreq[i]
                 else :
                     l[ix]=np.nan
 
@@ -249,31 +270,11 @@ class NVAFM_RFscan_matFile(matFile):
             for iy in range(self.ny):
                 i=self.xyToIndex(ix=nLine,iy=iy)
                 if i<self.nScans :
-                    l[iy]=self.centerFreq[i]
-                else :
-                    l[iy]=np.nan
-
-        return t,l
-
-
-    def ESRCentralFreqLine(self,nLine=0,excludeNan=True):
-        if self.xBeforeY():
-            l=np.zeros(self.nx)
-            t=np.linspace(self.xmin,self.xmax,self.nx)
-            for ix in range(self.nx):
-                i=self.xyToIndex(ix=ix,iy=nLine)
-                if i<self.nScans :
-                    l[ix]=self.centerFreq[i]
-                else :
-                    l[ix]=np.nan
-
-        else :
-            l=np.zeros(self.ny)
-            t=np.linspace(self.ymin,self.ymax,self.ny)
-            for iy in range(self.ny):
-                i=self.xyToIndex(ix=nLine,iy=iy)
-                if i<self.nScans :
-                    l[iy]=self.centerFreq[i]
+                    if refit :
+                        popt,yfit=analyse.ESR_1peak_PL_fit(self.allFreqs[i],self.allESRData[i])
+                        l[iy]=popt[1]
+                    else :
+                        l[iy]=self.centerFreq[i]
                 else :
                     l[iy]=np.nan
         if excludeNan :
@@ -283,6 +284,64 @@ class NVAFM_RFscan_matFile(matFile):
             l=l[:i]
             t=t[:i]
         return t,l
+
+    def ESRMap(self,refit=False):
+
+        a=np.zeros((self.nx,self.ny))
+        for i in range(self.nScans):
+            ix,iy=self.indexToXY(i)
+            if refit :
+                try :
+                    popt,yfit=analyse.ESR_1peak_PL_fit(self.allFreqs[i],self.allESRData[i])
+                    a[ix,iy]=popt[1]
+                except :
+                    a[ix,iy]=self.centerFreq[i]
+            else :
+                a[ix,iy]=self.centerFreq[i]
+
+        return a
+
+    def contrastMap(self,refit=True):
+        a=np.zeros((self.nx,self.ny))
+        for i in range(self.nScans):
+            ix,iy=self.indexToXY(i)
+            if refit :
+                try :
+                    popt,yfit=analyse.ESR_1peak_PL_fit(self.allFreqs[i],self.allESRData[i])
+                    a[ix,iy]=popt[0]/popt[3]
+                except :
+                    a[ix,iy]=np.nan
+            else :
+                a[ix,iy]=(max(self.allESRData[i])-min(self.allESRData[i]))/max(self.allESRData[i])
+
+        return a
+
+    def PLMap(self,refit=True):
+        a=np.zeros((self.nx,self.ny))
+        for i in range(self.nScans):
+            ix,iy=self.indexToXY(i)
+            if refit :
+                try :
+                    popt,yfit=analyse.ESR_1peak_PL_fit(self.allFreqs[i],self.allESRData[i])
+                    a[ix,iy]=popt[3]
+                except :
+                    a[ix,iy]=np.nan
+            else :
+                a[ix,iy]=max(self.allESRData[i])
+
+        return a
+    
+    def widthMap(self):
+        a=np.zeros((self.nx,self.ny))
+        for i in range(self.nScans):
+            ix,iy=self.indexToXY(i)
+            try :
+                popt,yfit=analyse.ESR_1peak_PL_fit(self.allFreqs[i],self.allESRData[i])
+                a[ix,iy]=popt[2]
+            except :
+                a[ix,iy]=np.nan
+
+        return a
 
     def xBeforeY(self):
         loopOrder=self.sm['Scanner'].item()['ScanCreate'].item(0)['scData'].item()['Fields'].item()['loopOrder'].item()
@@ -361,9 +420,12 @@ class NVAFM_sweeper(matFile):
 
 
 if __name__=='__main__':
-    t=NVAFM_scan_matFile(fileScan)
-    data=t.dataDic['Vz forward']
-    t.plot()
+    t=NVAFM_spectrum_matFile(fileSpectrum)
+    plt.plot(t.wavelengths,t.counts)
+    plt.show()
+    # t=NVAFM_scan_matFile(fileScan)
+    # data=t.dataDic['Vz forward']
+    # t.plot()
     # import tabulate
     # with open('/home/clement/Postdoc/python/Perso/Test file.txt','w') as f:
     #     f.write(tabulate.tabulate(data,tablefmt='plain'))

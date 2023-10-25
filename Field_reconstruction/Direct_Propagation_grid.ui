@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>476</width>
+    <height>509</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Direct Propagation</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="10" column="1">
+     <widget class="QLabel" name="projOriLabel">
+      <property name="text">
+       <string>Orientation</string>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="3" colspan="3">
+     <widget class="QLabel" name="projPhiLabel">
+      <property name="text">
+       <string>Phi (°)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="6">
+     <widget class="QLabel" name="MsLabel">
+      <property name="text">
+       <string>Ms (muB/nm2)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="6">
+     <widget class="QLineEdit" name="zLine">
+      <property name="text">
+       <string>50.0</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="6">
+     <widget class="QLabel" name="zLabel">
+      <property name="text">
+       <string>z (nm)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="6">
+     <widget class="Line" name="line">
+      <property name="lineWidth">
+       <number>2</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="3" colspan="2">
+     <widget class="QLineEdit" name="projPhiLine">
+      <property name="text">
+       <string>0</string>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="6">
+     <widget class="QLabel" name="projThetaLabel">
+      <property name="text">
+       <string>Theta (°)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="1">
+     <widget class="QLabel" name="lxLabel">
+      <property name="text">
+       <string>lx (um)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1">
+     <widget class="QLineEdit" name="lxLine">
+      <property name="text">
+       <string>15.0</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="5">
+     <widget class="QLineEdit" name="magThetaLine">
+      <property name="text">
+       <string>90</string>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="2" colspan="4">
+     <widget class="QPushButton" name="projectButton">
+      <property name="text">
+       <string>Plot projection</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="3" colspan="3">
+     <widget class="QLabel" name="projLabel">
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Projection</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="4" colspan="2">
+     <widget class="QLabel" name="magThetaLabel">
+      <property name="text">
+       <string>Theta (°)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="QLabel" name="magPhiLabel">
+      <property name="text">
+       <string>Phi (°)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="3" colspan="3">
+     <widget class="QLabel" name="lyLabel">
+      <property name="text">
+       <string>ly (um)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="2" colspan="4">
+     <widget class="QPushButton" name="computeBButton">
+      <property name="text">
+       <string>Compute B field</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="1" colspan="6">
+     <widget class="Line" name="line_2">
+      <property name="lineWidth">
+       <number>2</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="3" colspan="3">
+     <widget class="QLineEdit" name="lyLine">
+      <property name="text">
+       <string>15.0</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLabel" name="magOriLabel">
+      <property name="text">
+       <string>Orientation</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="5" colspan="2">
+     <widget class="QPushButton" name="createShapeButton">
+      <property name="text">
+       <string>Create Shape</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="3">
+     <widget class="QLineEdit" name="magPhiLine">
+      <property name="text">
+       <string>0</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QPushButton" name="loadShapeButton">
+      <property name="text">
+       <string>Load Shape</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" rowspan="13">
+     <layout class="QVBoxLayout" name="plotLayout"/>
+    </item>
+    <item row="4" column="6">
+     <widget class="QLineEdit" name="MsLine">
+      <property name="text">
+       <string>24</string>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="1">
+     <widget class="QComboBox" name="projOriCombo"/>
+    </item>
+    <item row="2" column="2" colspan="4">
+     <widget class="QLabel" name="magLabel">
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Magnetization</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QComboBox" name="magOriCombo"/>
+    </item>
+    <item row="11" column="6">
+     <widget class="QLineEdit" name="projThetaLine">
+      <property name="text">
+       <string>0</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>476</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

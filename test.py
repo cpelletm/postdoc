@@ -38,4 +38,6 @@ def test_local_file():
     import GUI_lib
     GUI_lib.localVariableDic('style sheet.json')
 
-print([0,15] is None)
+
+
+

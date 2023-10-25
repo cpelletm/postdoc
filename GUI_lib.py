@@ -3,51 +3,74 @@ import os
 import time
 import traceback
 import json
+import typing
 import numpy as np
 
-from PyQt5 import uic,QtWidgets
+
+
+from PyQt5 import QtCore, uic,QtWidgets
 from PyQt5.QtGui import QFont,QTransform,QCloseEvent
 from PyQt5.QtCore import (Qt, QTimer,QSize, QEvent)
 from PyQt5.QtWidgets import (QWidget, QPushButton, QComboBox,
     QHBoxLayout, QVBoxLayout, QApplication, QDesktopWidget, QMainWindow, QLineEdit, QLabel, QCheckBox, QFileDialog, QErrorMessage, QMessageBox, QFrame)
 
+import matplotlib
+matplotlib.use('Qt5Agg')
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+
 import pyqtgraph as pg #Plot library
 import qdarkstyle #For dark mode
 from pyqt_led import Led as ledWidget #For LED widget
 
-
 qapp = QApplication(sys.argv)
 
-#Folder to store the config files for each program. If "default" will store in User/Documents/Python/GUI config files
-local_config_files_folder='default'
+'''
+Config files (.json) and design files (.ui) are defined here.
+These files exist always in two folder : 
+one global (in the same folder as this file) which should be the same on all installations,
+and one local (emplacement stored in Local folder.txt) which can be customized by each user.
 
-def localConfigFolder(localFolder):
-    #Returns the folder to store local configuration files. Creates one if it doesn't exist
-    if localFolder=='default':
-        import platform
-        if platform.system()=='Linux' or platform.system()=='Windows':
-            f=os.path.expanduser('~/Documents/Python/GUI config files')
-        else :
-            raise ValueError('OS %s not supported for now(but you can change that !)'%(platform.system()))
-    else :
-        f=localFolder
+The local version overrides the global version,
+but if a variable is not present in the local version, it will be added with the default value from the global version.
+'''
 
-    if not os.path.exists(f):
-        ask=input('\n\nLocal config file not found. \n Would you like to create one in %s ? (y/n)'%(f))
-        if ask=='y':
-            os.mkdir(f)
-        else :
-            raise KeyboardInterrupt
-    return f
+def findLocalFolder():
+    #Find the local folder where the config files (json files and design files) are stored
+    currentFolder=os.path.dirname(__file__)
+    localFolder_path=os.path.join(currentFolder,'Local folder.txt')
+    if os.path.exists(localFolder_path):
+        with open(localFolder_path,'r') as f:
+            localFolder=f.read()
+    if not os.path.exists(localFolder):
+        localFolder=QFileDialog.getExistingDirectory(None, "Select Local Config Folder", currentFolder)
+        with open(localFolder_path,'w') as f:
+            f.write(localFolder)
+    
+    localConfigFolder=os.path.join(localFolder,'Config files')
+    if not os.path.exists(localConfigFolder):
+        os.mkdir(localConfigFolder)
+    localDesignFolder=os.path.join(localFolder,'GUI design files')
+    if not os.path.exists(localDesignFolder):
+        os.mkdir(localDesignFolder)
+    return localConfigFolder,localDesignFolder
+
+localConfigFolder,localDesignFolder=findLocalFolder()
+
+def updateJsonFile(filename, d):
+    #Updates the json file with the dictionnary d
+    if not filename.endswith('.json'):
+        filename+='.json'
+    filename=os.path.join(localConfigFolder,filename)
+    with open(filename,'w') as f:
+        json.dump(d,f,indent=2)
 
 def localVariableDic(configFileName):
     #Returns a dictionnary with all local variables. If a variable is not present in the local file (after a code update for instance), it will update the local file with the default value form the global file
     if not configFileName.endswith('.json'):    
         configFileName+='.json'
-    localFolder=localConfigFolder(localFolder=local_config_files_folder)
-    localFilename=os.path.join(localFolder,configFileName)
+    localFilename=os.path.join(localConfigFolder,configFileName)
 
-    globalFolder=os.path.join(os.path.dirname(__file__),'GUI config files')
+    globalFolder=os.path.join(os.path.dirname(__file__),'Config files')
     globalFilename=os.path.join(globalFolder,configFileName)
 
     if not os.path.exists(localFilename):
@@ -64,17 +87,29 @@ def localVariableDic(configFileName):
             dloc[key]=dglob[key]
             updateLocalFile=True
     if updateLocalFile :
-        with open(localFilename,'w') as f:
-            json.dump(dloc,f,indent=2)
+        updateJsonFile(configFileName,dloc)
 
     return dloc
+ 
+computerDic=localVariableDic('Computer.json')
+def checkComputerDic():
+    change=False
+    if computerDic['computer name']=="":
+        print("Computer name not found. Please enter a neame for this computer :")
+        computerDic['computer name']=input()
+        change=True
+    if computerDic['save folder']=="":
+        computerDic['save folder']=QFileDialog.getExistingDirectory(None, "Select Save Folder")
+        change=True
+    if change:
+        updateJsonFile('Computer.json',computerDic)
+checkComputerDic()
 
 def localDesignFile(designFileName: str):   
     #Returns the path to the local design file. If it doesn't exist, it will create it from the global design file
     if not designFileName.endswith('.ui'):
         designFileName+='.ui'
-    localFolder=localConfigFolder(localFolder=local_config_files_folder)
-    localFilename=os.path.join(localFolder,designFileName)
+    localFilename=os.path.join(localDesignFolder,designFileName)
 
     globalFolder=os.path.join(os.path.dirname(__file__),'GUI design files')
     globalFilename=os.path.join(globalFolder,designFileName)
@@ -183,6 +218,8 @@ class generalWidget():
         pass
     def setEnabled(self,b):
         self.widget.setEnabled(b)
+    def isEnabled(self):
+        return self.widget.isEnabled()
     def setFont(self,font='custom',fontName='Sans Serif',fontSize=12,weight=400): #weight=700 for Bold
         if font=='big':
             font=self.bigfontText
@@ -212,6 +249,62 @@ class generalWidget():
 
     def addToBox(self,box):
         box.addWidget(self.widget)
+
+class box(generalWidget):
+    #box is what is called "layout" in Qt. It is a widget-like object which can contain other widget-like objects.
+    #All widget-like objects composed of two or more true widgets should inherit this class
+    def __init__(self,*items,typ='H',spacing='default',designerLayout=None ): #typ='H' or 'V'
+        super().__init__()
+        if typ=='H':
+            self.box=QHBoxLayout()
+        elif typ=='V':
+            self.box=QVBoxLayout()
+        if designerLayout!=None:
+            self.box=designerLayout
+        self.items=[]
+        if spacing=='default':
+            self.box.addStretch(1)
+        for item in items :
+            if item=='stretch':
+                self.box.addStretch(1)
+            elif type(item)==int or type(item)==float :               
+                w=QWidget()
+                if typ=='H':
+                    w.setFixedSize(item,1)
+                elif typ=='V':
+                    w.setFixedSize(1,item)
+                self.box.addWidget(w)
+            else :
+                if type(item)!=box and len(items)>1 :
+                    if typ=='H':
+                        item=box(item,typ='V')
+                    elif typ=='V':
+                        item=box(item,typ='H')
+                # item.resize()
+                item.addToBox(self.box)
+                self.items+=[item]
+        if spacing=='default':
+            self.box.addStretch(1)
+
+        # self.box.setAlignment(Qt.AlignHCenter)
+        # self.box.setAlignment(Qt.AlignVCenter)
+        # self.widget=QWidget()
+        # self.widget.setLayout(self.box)
+    def setEnabled(self,b):
+        for item in self.items:
+            item.setEnabled(b)
+    def setFont(self,*args,**kwargs):
+        for item in self.items:
+            try:
+                item.setFont(*args,**kwargs)
+            except:
+                pass
+    def resize(self,height='min',width='min'):
+        #Resize for boxes resize each item with the given values. 
+        for item in self.items:
+            item.resize(height=height,width=width)
+    def addToBox(self, box):
+        box.addLayout(self.box)
 
 class pgFig(generalWidget) :
     def __init__(self,style :styleSheet=None, designerWidget=None, size=None,refreshRate=30,title=None):
@@ -412,14 +505,50 @@ class pgLine(pg.PlotDataItem):
                 yToPlot=self.y
             self.setData(self.x,yToPlot,**plotArgs)
 
-
 class pgMap(pg.ImageItem):
     def __init__(self, image=None, **kargs):
         super().__init__(image, **kargs)
 
+class mplFig(box):
+    def __init__(self, designerLayout=None, size=(10,8),toolbar=True,tightLayout=True):
+
+        super().__init__(designerLayout=designerLayout)
+
+
+        self.fig=matplotlib.figure.Figure(figsize=size)
+        if tightLayout :
+            self.fig.set_layout_engine('tight')
+        self.mplFig=FigureCanvas(self.fig)
+        self.box.addWidget(self.mplFig)
+        if toolbar :
+            self.toolbar = NavigationToolbar(self.mplFig)
+            self.box.addWidget(self.toolbar)
+
+        self.axes=[]
+
+    def addAx(self, nrows=1, ncols=1, index=(1,1), **kargs):
+        ax=self.fig.add_subplot(nrows,ncols,index,**kargs)
+        self.axes+=[ax]
+        return ax
+    
+    def update(self):
+        self.fig.canvas.draw()
+
+    def setAction(self,action):
+        self.fig.canvas.mpl_connect('button_press_event', action)
+        #event.button : 1=left, 2=middle, 3=right
+        #event.xdata, event.ydata : coordinates of the click in the data units
+        #Example action :
+        # def dummyAction(event):
+        #     print("clicked with button %d at (%f,%f)"%(event.button,event.xdata,event.ydata))
+
+    def clear(self):
+        self.fig.clear()
+        self.axes=[]
+        
 class Graphical_interface(QMainWindow) :
-    def __init__(self,*itemLists,designerFile='',title='Unnamed',size='default',keyPressed='default', keyReleased='default'):
-        super().__init__() #Creates a window
+    def __init__(self,*itemLists,designerFile='',title='Unnamed',size='default',keyPressed='default', keyReleased='default',parent=None):
+        super().__init__(parent=parent) #Creates a window
 
         sys.excepthook=self.excepthook #If the GUI crash, it will execute self.excepthook which calls self.closeEvent
 
@@ -479,58 +608,6 @@ class Graphical_interface(QMainWindow) :
         print("error message:\n", tb)
         self.closeEvent(QCloseEvent())
 
-class box(generalWidget):
-    def __init__(self,*items,typ='H',spacing='default'): #typ='H' or 'V'
-        super().__init__()
-        if typ=='H':
-            self.box=QHBoxLayout()
-        elif typ=='V':
-            self.box=QVBoxLayout()
-        self.items=[]
-        if spacing=='default':
-            self.box.addStretch(1)
-        for item in items :
-            if item=='stretch':
-                self.box.addStretch(1)
-            elif type(item)==int or type(item)==float :               
-                w=QWidget()
-                if typ=='H':
-                    w.setFixedSize(item,1)
-                elif typ=='V':
-                    w.setFixedSize(1,item)
-                self.box.addWidget(w)
-            else :
-                if type(item)!=box and len(items)>1 :
-                    if typ=='H':
-                        item=box(item,typ='V')
-                    elif typ=='V':
-                        item=box(item,typ='H')
-                # item.resize()
-                item.addToBox(self.box)
-                self.items+=[item]
-        if spacing=='default':
-            self.box.addStretch(1)
-
-        # self.box.setAlignment(Qt.AlignHCenter)
-        # self.box.setAlignment(Qt.AlignVCenter)
-        # self.widget=QWidget()
-        # self.widget.setLayout(self.box)
-    def setEnabled(self,b):
-        for item in self.items:
-            item.setEnabled(b)
-    def setFont(self,*args,**kwargs):
-        for item in self.items:
-            try:
-                item.setFont(*args,**kwargs)
-            except:
-                pass
-    def resize(self,height='min',width='min'):
-        #Resize for boxes resize each item with the given values. 
-        for item in self.items:
-            item.resize(height=height,width=width)
-    def addToBox(self, box):
-        box.addLayout(self.box)
-
 class label(generalWidget):
     def __init__(self,name,precision='exact'):
         super().__init__()
@@ -543,7 +620,7 @@ class label(generalWidget):
         return self.widget.text()
 
 class button(generalWidget):
-    def __init__(self,name,action=False,designerWidget:QPushButton=False): 
+    def __init__(self,name='',action=False,designerWidget:QPushButton=False): 
         super().__init__()
         if designerWidget : 
             self.widget=designerWidget
@@ -632,24 +709,31 @@ class buttonWithLed(box):
         self.button.setFont(*args, **kwargs)
     
 class checkBox(generalWidget):
-    def __init__(self,name,action=False,initialState=False): 
+    def __init__(self,name='',action=False,initialState=False,designerWidget:QCheckBox=None): 
         super().__init__()
-        self.widget=QCheckBox(name)
-        self.setState(initialState)
+        if designerWidget != None :
+            self.widget=designerWidget
+        else :
+            self.widget=QCheckBox(name)
+            self.setState(initialState)
         if action :
             self.setAction(action)  
     def setAction(self,action):		
-            self.cb.stateChanged.connect(action)
+            self.widget.stateChanged.connect(action)
     def setState(self,state):
-        self.cb.setCheckState(state)
-        self.cb.setTristate(False)
+        self.widget.setCheckState(state)
+        self.widget.setTristate(False)
     def state(self):
-        return(self.cb.isChecked())
+        return(self.widget.isChecked())
 
 class comboBox(generalWidget):
-    def __init__(self,*items,action=False,actionType='currentIndexChanged'):
+    def __init__(self,*items,action=False,actionType='currentIndexChanged',designerWidget:QComboBox=None):
         super().__init__()
-        self.widget=QComboBox()
+        #Remark : a combo box with no entry is condered as 'False'
+        if designerWidget != None :
+            self.widget=designerWidget
+        else :
+            self.widget=QComboBox()
         self.dic={}
         for item in items :
             self.addItem(item)
@@ -675,6 +759,9 @@ class comboBox(generalWidget):
     def addItem(self,item):
         self.dic[item]=self.widget.count() #je le fait avant pour qu'il commence à 0
         self.widget.addItem(item)
+    def addItems(self,items):
+        for item in items :
+            self.addItem(item)
     def removeItem(self,item):
         #Attention : ca vire pas du dictionnaire. Faudrait faire ça plus propre
         if isinstance(item,str) :
@@ -708,20 +795,26 @@ class dropDownMenu(box):
         return self.cb.removeAll()
 
 class lineEdit(generalWidget):
-    def __init__(self,initialValue='noValue',action="update",precision='exact'): 
+    def __init__(self,initialValue='noValue',action="update",precision='exact',designerWidget:QLineEdit=False): 
         super().__init__()
         self.precision=precision
-        self.widget=QLineEdit()
-        self.widget.minimumSizeHint=lambda : QSize(100,20)
+        if designerWidget : 
+            self.widget=designerWidget
+        else :
+            self.widget=QLineEdit()
+            self.widget.minimumSizeHint=lambda : QSize(100,20)
+            self.resize()
         if initialValue != 'noValue' :
             self.setValue(initialValue)
+        self.updateValue()
         if action :
             self.setAction(action)
-        self.resize()
+        
     def getValue(self):
         self.updateValue()
         return self.v
     def updateValue(self):
+        #Not the cleanest, but this will return a float, int or string depending on the input
         try : 
             self.v=float(self.widget.text())
             if self.v.is_integer():
@@ -757,6 +850,27 @@ class mpt_colormap(generalWidget):
     def __init__(self):
         super().__init__()
 
+class GUI_enterValue(QMainWindow):
+    def __init__(self, label="Value title", defaultValue=""):
+        super().__init__()
+        self.label=label
+        self.defaultValue=defaultValue
+        self.initUI()
+    def initUI(self):
+        self.setWindowTitle(self.label)
+        self.main = QFrame()
+        self.setCentralWidget(self.main)
+        layout= QVBoxLayout()
+        self.main.setLayout(layout)
+        self.value=QLineEdit()
+        self.value.setText(self.defaultValue)
+        self.value.editingFinished.connect(self.close)
+        self.Qlabel=QLabel(self.label)
+        layout.addWidget(self.Qlabel)
+        layout.addWidget(self.value)
+        self.show()
+
+
 def repr_numbers(value,precision='exact',maxScientficExponent=4,minScientficExponent=-2):
     if isinstance(value,str):
         label=(value)
@@ -776,11 +890,8 @@ def repr_numbers(value,precision='exact',maxScientficExponent=4,minScientficExpo
             label=('{:.{}f}'.format(value,precision))
     return label
 
-def whereIsFocus(oldWidget,newWidget):
-    print('old widget:')
-    print(oldWidget)
-    print('new widget:')
-    print(newWidget)
+def currentFolder():
+    return os.path.dirname(os.path.realpath(__file__))
 
 def changeColorWhenInFocus(oldWidget,newWidget):
     if newWidget :
@@ -789,25 +900,6 @@ def changeColorWhenInFocus(oldWidget,newWidget):
     if oldWidget :
         style='background-color: palette(base)'
         oldWidget.setStyleSheet(style)
-
-def firstInitDic(configFileName):
-    #Not that useful honestly, just fill manually
-    localFolder=localConfigFolder(localFolder=local_config_files_folder)
-    localFilename=os.path.join(localFolder,configFileName)
-
-    try:
-        ss=styleSheet()
-        ydata=np.zeros(200)
-        penIndex=0
-        ss.dataStyle(ydata=ydata,penIndex=penIndex)
-    except KeyError as err:
-        key=str(err.args[0])
-        print("new key %s"%key)
-        with open(localFilename,'r') as f:
-            dloc=json.load(f)
-        dloc[key]='TBD'
-        with open(localFilename,'w') as f:
-            json.dump(dloc,f,indent=2)
 
 def testWithDesigner():
     GUI=Graphical_interface(designerFile="/home/clement/Postdoc/python/Perso/testUI.ui")

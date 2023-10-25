@@ -1,0 +1,134 @@
+{
+  "default theme": "light",
+  "threshold for thin line": 202,
+  "data large width": 3,
+  "data thin width": 1,
+  "data style": "solid",
+  "data symbol": "o",
+  "data symbol brush": null,
+  "trace large width": 2,
+  "trace thin width": 1,
+  "trace style": "dashdot",
+  "trace symbol": null,
+  "trace symbol brush": null,
+  "fit large width": 2,
+  "fit thin width": 2,
+  "fit style": "solid",
+  "fit symbol": null,
+  "fit symbol brush": null,
+  "lightPenColors": [
+    [
+      31,
+      119,
+      180
+    ],
+    [
+      255,
+      127,
+      14
+    ],
+    [
+      44,
+      160,
+      44
+    ],
+    [
+      214,
+      39,
+      40
+    ],
+    [
+      148,
+      103,
+      189
+    ],
+    [
+      140,
+      86,
+      75
+    ],
+    [
+      227,
+      119,
+      194
+    ],
+    [
+      127,
+      127,
+      127
+    ],
+    [
+      188,
+      189,
+      34
+    ],
+    [
+      23,
+      190,
+      207
+    ]
+  ],
+  "darkPenColors": [
+    [
+      255,
+      127,
+      14
+    ],
+    [
+      31,
+      119,
+      180
+    ],
+    [
+      44,
+      160,
+      44
+    ],
+    [
+      214,
+      39,
+      40
+    ],
+    [
+      148,
+      103,
+      189
+    ],
+    [
+      140,
+      86,
+      75
+    ],
+    [
+      227,
+      119,
+      194
+    ],
+    [
+      127,
+      127,
+      127
+    ],
+    [
+      188,
+      189,
+      34
+    ],
+    [
+      23,
+      190,
+      207
+    ]
+  ],
+  "lightInfiniteLineColor": [
+    100,
+    100,
+    100
+  ],
+  "darkInfiniteLineColor": [
+    255,
+    255,
+    255
+  ]
+  
+}
