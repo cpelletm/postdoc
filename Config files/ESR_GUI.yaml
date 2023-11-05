@@ -1,0 +1,100 @@
+#~~~~~~~~~~~~~ General settings
+name: ESR_GUI
+designer_file: name@self #so 'ESR_GUI.ui' in this case
+style_sheet: default_style_sheet #name of the style sheet file in Config files folder
+station: LT_ATTODRY #select_station to select your station at startup
+
+
+
+#~~~~~~~~~~~~~ Instrument settings
+mw_source: SMBV@instruments
+
+#~~~~~~~~~~~~~ Acquisition settings
+acquisition_type: ni_daq
+
+ni_daq:
+  PL_chans: [ctr1@ni_chans, ctr2@ni_chans]
+  trig_PL_chan: trig_PL_NI@ni_chans
+  #Triggers for discrete list/sweep mode (SMB100A, SMBV100B....)
+  trig_out_chan: trig_mw@ni_chans
+  #AO for analog sweep (SRS)
+  ao_sweep_chan: SRS_sweep@ni_chans
+
+PL:
+  unit: kcps@units
+
+#~~~~~~~~~~~~~ Fields parameters
+#Fields have the form : field_name: {name:name (unique identifier of the field), value: default value, unit: unit@units}
+
+fmin:
+  name: fmin
+  value: 2800
+  unit: MHz@units
+  precision: 3
+
+fmax:
+  name: fmax
+  value: 2950
+  unit: MHz@units
+  precision: 3
+
+power:
+  name: power
+  value: -30
+  unit: dBm@units
+  precision: 3
+
+npoints:
+  name: npoints
+  value: 151
+  unit: no_unit@units
+
+dt:
+  name: dt
+  value: 10
+  unit: ms@units
+  precision: 3
+
+experiment_name:
+  name: experiment_name
+  value: name@self
+  unit: no_unit@units
+
+sample_name:
+  name: sample_name
+  value: ''
+  unit: no_unit@units
+
+
+#~~~~~~~~~~~~~ Combobox (menu) parameters
+channel:
+  name: channel
+  value: ctr1
+
+
+#~~~~~~~~~~~~~ Figures settings
+fig:
+  refresh_rate: 30 #Images per sconds
+  style_sheet: style_sheet@self
+
+#~~~~~~~~~~~~~ Save settings
+save:
+  folder: name@self
+  ask_name: false
+  subfolders: y   # 'null' for no subfolders, 'y' for a subfolder per year, 'm' for a subfolder per month, 'd' for a subfolder per day, 'ymd' for a subfolder per year, month and day
+  save_data: true
+  save_data_type: csv # only csv supported for now
+  save_fig: true
+
+
+
+
+design_file: name@self
+exp_name:
+  value: name@self
+  unit: str
+
+PL_chans: [ctr1@ni_chans, ctr2@ni_chans]
+trig_PL_chan: trig_PL_NI@ni_chans
+trig_out_chan: trig_mw@ni_chans
+ao_sweep_chan: SRS_sweep@ni_chans

@@ -1,0 +1,4 @@
+# Microwave sources
+SMBV : 
+  instrument_type : SMBV100B
+  VISA_address : "TCPIP0::192.168.1.52::inst0::INSTR"

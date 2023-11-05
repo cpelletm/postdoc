@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import rpyc
 from rpyc.utils.server import ThreadedServer
 import GUI_lib as glib
@@ -7,13 +9,13 @@ class generalInstrumentService(rpyc.Service):
     #Service name is both the name of the service on the network,
     #and the name of the associated config file
     serviceName='general instrument'
-    computerName=glib.computerDic['computer name']
+    computerName=glib.computerDic['computer_name']
 
     #Action happening the first time the service is instanciated
     def __init__(self) -> None:
         self.timeCreated=time.time()
         self.__class__.ALIASES=[self.serviceName+' ON '+self.computerName]
-        self.config=glib.localVariableDic(self.serviceName+'.json')
+        self.config=glib.localVariableDic(self.serviceName)
 
     #Action happening when a client calls the service
     def on_connect(self, conn):

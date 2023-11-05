@@ -1,0 +1,225 @@
+#~~~~~~~~~~~~~  Base units
+SI:
+  name: SI
+  base: SI
+  multiplier: 1
+
+int:
+  name: integer
+  base: int
+  multiplier: 1
+
+str:
+  name: string
+  base: str
+  multiplier: 1
+
+no_unit:
+  name: no unit
+  base: no_unit
+  multiplier: 1
+#~~~~~~~~~~~~~  Frequency units
+Hz:
+  name: Hz
+  base: Hz
+  multiplier: 1
+
+kHz:
+  name: kHz
+  base: Hz
+  multiplier: 1e3
+
+MHz:
+  name: MHz
+  base: Hz
+  multiplier: 1e6
+
+GHz:
+  name: GHz
+  base: Hz
+  multiplier: 1e9
+
+cps:
+  name: cps
+  base: Hz
+  multiplier: 1
+
+kcps:
+  name: kcps
+  base: Hz
+  multiplier: 1e3
+
+Mcps:
+  name: Mcps
+  base: Hz
+  multiplier: 1e6
+
+Gcps:
+  name: Gcps
+  base: Hz
+  multiplier: 1e9
+#~~~~~~~~~~~~~  Power units
+W:
+  name: W
+  base: W
+  multiplier: 1
+
+mW:
+  name: mW
+  base: W
+  multiplier: 1e-3
+
+uW:
+  name: uW
+  base: W
+  multiplier: 1e-6
+
+nW:
+  name: nW
+  base: W
+  multiplier: 1e-9
+
+dBm:
+  name: dBm
+  base: dBm #I dont want to bother with log scale, make it a new basis
+  multiplier: 1
+
+#~~~~~~~~~~~~~  Time units
+s:
+  name: s
+  base: s
+  multiplier: 1
+
+ms:
+  name: ms
+  base: s
+  multiplier: 1e-3
+
+us:
+  name: us
+  base: s
+  multiplier: 1e-6
+
+ns:
+  name: ns
+  base: s
+  multiplier: 1e-9
+
+min:
+  name: min
+  base: s
+  multiplier: 60
+
+hours:
+  name: hours
+  base: s
+  multiplier: 3600
+
+days:
+  name: days
+  base: s
+  multiplier: 86400
+
+V:
+  name: V
+  type: voltage
+  multiplier: 1
+
+mV:
+  name: mV
+  type: voltage
+  multiplier: 1e-3
+
+uV:
+  name: uV
+  type: voltage
+  multiplier: 1e-6
+
+nV:
+  name: nV
+  type: voltage
+  multiplier: 1e-9
+
+#~~~~~~~~~~~~~  Current units
+A:
+  name: A
+  type: current
+  multiplier: 1
+
+mA:
+  name: mA
+  type: current
+  multiplier: 1e-3
+
+uA:
+  name: uA
+  type: current
+  multiplier: 1e-6
+
+nA:
+  name: nA
+  type: current
+  multiplier: 1e-9
+
+#~~~~~~~~~~~~~  Temperature units
+K:
+  name: K
+  type: temperature
+  multiplier: 1
+
+mK:
+  name: mK
+  type: temperature
+  multiplier: 1e-3
+
+#~~~~~~~~~~~~~  Magnetic field units
+T:
+  name: T
+  type: magnetic_field
+  multiplier: 1
+
+mT:
+  name: mT
+  type: magnetic_field
+  multiplier: 1e-3
+
+uT:
+  name: uT
+  type: magnetic_field
+  multiplier: 1e-6
+
+nT:
+  name: nT
+  type: magnetic_field
+  multiplier: 1e-9
+
+G:
+  name: G
+  type: magnetic_field
+  multiplier: 1e-4
+
+mG:
+  name: mG
+  type: magnetic_field
+  multiplier: 1e-7
+
+#~~~~~~~~~~~~~  Distance units
+m:
+  name: m
+  type: distance
+  multiplier: 1
+
+mm:
+  name: mm
+  type: distance
+  multiplier: 1e-3
+
+um:
+  name: um
+  type: distance
+  multiplier: 1e-6
+
+nm:
+  name: nm
+  type: distance
+  multiplier: 1e-9

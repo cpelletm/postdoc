@@ -1,0 +1,9 @@
+{
+    "core": {
+        "db_location": "D:/Python data/main.db"
+    },
+    "dataset": {
+        "export_automatic": true,
+        "export_type": "netcdf"
+    }
+}

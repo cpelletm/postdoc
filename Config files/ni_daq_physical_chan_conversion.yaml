@@ -1,0 +1,540 @@
+ai_chans:
+  PXI1Slot4/ai0:
+    chan_no: 0
+    device_no: 0
+  PXI1Slot4/ai1:
+    chan_no: 1
+    device_no: 0
+  PXI1Slot4/ai10:
+    chan_no: 10
+    device_no: 0
+  PXI1Slot4/ai11:
+    chan_no: 11
+    device_no: 0
+  PXI1Slot4/ai12:
+    chan_no: 12
+    device_no: 0
+  PXI1Slot4/ai13:
+    chan_no: 13
+    device_no: 0
+  PXI1Slot4/ai14:
+    chan_no: 14
+    device_no: 0
+  PXI1Slot4/ai15:
+    chan_no: 15
+    device_no: 0
+  PXI1Slot4/ai2:
+    chan_no: 2
+    device_no: 0
+  PXI1Slot4/ai3:
+    chan_no: 3
+    device_no: 0
+  PXI1Slot4/ai4:
+    chan_no: 4
+    device_no: 0
+  PXI1Slot4/ai5:
+    chan_no: 5
+    device_no: 0
+  PXI1Slot4/ai6:
+    chan_no: 6
+    device_no: 0
+  PXI1Slot4/ai7:
+    chan_no: 7
+    device_no: 0
+  PXI1Slot4/ai8:
+    chan_no: 8
+    device_no: 0
+  PXI1Slot4/ai9:
+    chan_no: 9
+    device_no: 0
+ao_chans:
+  PXI1Slot5/ao0:
+    chan_no: 0
+    device_no: 1
+  PXI1Slot5/ao1:
+    chan_no: 1
+    device_no: 1
+  PXI1Slot5/ao2:
+    chan_no: 2
+    device_no: 1
+  PXI1Slot5/ao3:
+    chan_no: 3
+    device_no: 1
+  PXI1Slot5/ao4:
+    chan_no: 4
+    device_no: 1
+  PXI1Slot5/ao5:
+    chan_no: 5
+    device_no: 1
+  PXI1Slot5/ao6:
+    chan_no: 6
+    device_no: 1
+  PXI1Slot5/ao7:
+    chan_no: 7
+    device_no: 1
+ci_chans:
+  PXI1Slot4/ctr0:
+    chan_no: 0
+    device_no: 0
+  PXI1Slot4/ctr1:
+    chan_no: 1
+    device_no: 0
+  PXI1Slot5/ctr0:
+    chan_no: 0
+    device_no: 1
+  PXI1Slot5/ctr1:
+    chan_no: 1
+    device_no: 1
+  PXI1Slot6/ctr0:
+    chan_no: 0
+    device_no: 2
+  PXI1Slot6/ctr1:
+    chan_no: 1
+    device_no: 2
+  PXI1Slot6/ctr2:
+    chan_no: 2
+    device_no: 2
+  PXI1Slot6/ctr3:
+    chan_no: 3
+    device_no: 2
+  PXI1Slot6/ctr4:
+    chan_no: 4
+    device_no: 2
+  PXI1Slot6/ctr5:
+    chan_no: 5
+    device_no: 2
+  PXI1Slot6/ctr6:
+    chan_no: 6
+    device_no: 2
+  PXI1Slot6/ctr7:
+    chan_no: 7
+    device_no: 2
+co_chans:
+  PXI1Slot4/ctr0:
+    chan_no: 0
+    device_no: 0
+  PXI1Slot4/ctr1:
+    chan_no: 1
+    device_no: 0
+  PXI1Slot4/freqout:
+    chan_no: 2
+    device_no: 0
+  PXI1Slot5/ctr0:
+    chan_no: 0
+    device_no: 1
+  PXI1Slot5/ctr1:
+    chan_no: 1
+    device_no: 1
+  PXI1Slot5/freqout:
+    chan_no: 2
+    device_no: 1
+  PXI1Slot6/ctr0:
+    chan_no: 0
+    device_no: 2
+  PXI1Slot6/ctr1:
+    chan_no: 1
+    device_no: 2
+  PXI1Slot6/ctr2:
+    chan_no: 2
+    device_no: 2
+  PXI1Slot6/ctr3:
+    chan_no: 3
+    device_no: 2
+  PXI1Slot6/ctr4:
+    chan_no: 4
+    device_no: 2
+  PXI1Slot6/ctr5:
+    chan_no: 5
+    device_no: 2
+  PXI1Slot6/ctr6:
+    chan_no: 6
+    device_no: 2
+  PXI1Slot6/ctr7:
+    chan_no: 7
+    device_no: 2
+di_chans:
+  PXI1Slot4/port0/line0:
+    chan_no: 0
+    device_no: 0
+  PXI1Slot4/port0/line1:
+    chan_no: 1
+    device_no: 0
+  PXI1Slot4/port0/line2:
+    chan_no: 2
+    device_no: 0
+  PXI1Slot4/port0/line3:
+    chan_no: 3
+    device_no: 0
+  PXI1Slot4/port0/line4:
+    chan_no: 4
+    device_no: 0
+  PXI1Slot4/port0/line5:
+    chan_no: 5
+    device_no: 0
+  PXI1Slot4/port0/line6:
+    chan_no: 6
+    device_no: 0
+  PXI1Slot4/port0/line7:
+    chan_no: 7
+    device_no: 0
+  PXI1Slot4/port1/line0:
+    chan_no: 8
+    device_no: 0
+  PXI1Slot4/port1/line1:
+    chan_no: 9
+    device_no: 0
+  PXI1Slot4/port1/line2:
+    chan_no: 10
+    device_no: 0
+  PXI1Slot4/port1/line3:
+    chan_no: 11
+    device_no: 0
+  PXI1Slot4/port1/line4:
+    chan_no: 12
+    device_no: 0
+  PXI1Slot4/port1/line5:
+    chan_no: 13
+    device_no: 0
+  PXI1Slot4/port1/line6:
+    chan_no: 14
+    device_no: 0
+  PXI1Slot4/port1/line7:
+    chan_no: 15
+    device_no: 0
+  PXI1Slot4/port2/line0:
+    chan_no: 16
+    device_no: 0
+  PXI1Slot4/port2/line1:
+    chan_no: 17
+    device_no: 0
+  PXI1Slot4/port2/line2:
+    chan_no: 18
+    device_no: 0
+  PXI1Slot4/port2/line3:
+    chan_no: 19
+    device_no: 0
+  PXI1Slot4/port2/line4:
+    chan_no: 20
+    device_no: 0
+  PXI1Slot4/port2/line5:
+    chan_no: 21
+    device_no: 0
+  PXI1Slot4/port2/line6:
+    chan_no: 22
+    device_no: 0
+  PXI1Slot4/port2/line7:
+    chan_no: 23
+    device_no: 0
+  PXI1Slot5/port0/line0:
+    chan_no: 0
+    device_no: 1
+  PXI1Slot5/port0/line1:
+    chan_no: 1
+    device_no: 1
+  PXI1Slot5/port0/line2:
+    chan_no: 2
+    device_no: 1
+  PXI1Slot5/port0/line3:
+    chan_no: 3
+    device_no: 1
+  PXI1Slot5/port0/line4:
+    chan_no: 4
+    device_no: 1
+  PXI1Slot5/port0/line5:
+    chan_no: 5
+    device_no: 1
+  PXI1Slot5/port0/line6:
+    chan_no: 6
+    device_no: 1
+  PXI1Slot5/port0/line7:
+    chan_no: 7
+    device_no: 1
+  PXI1Slot6/port0/line0:
+    chan_no: 0
+    device_no: 2
+  PXI1Slot6/port0/line1:
+    chan_no: 1
+    device_no: 2
+  PXI1Slot6/port0/line10:
+    chan_no: 10
+    device_no: 2
+  PXI1Slot6/port0/line11:
+    chan_no: 11
+    device_no: 2
+  PXI1Slot6/port0/line12:
+    chan_no: 12
+    device_no: 2
+  PXI1Slot6/port0/line13:
+    chan_no: 13
+    device_no: 2
+  PXI1Slot6/port0/line14:
+    chan_no: 14
+    device_no: 2
+  PXI1Slot6/port0/line15:
+    chan_no: 15
+    device_no: 2
+  PXI1Slot6/port0/line16:
+    chan_no: 16
+    device_no: 2
+  PXI1Slot6/port0/line17:
+    chan_no: 17
+    device_no: 2
+  PXI1Slot6/port0/line18:
+    chan_no: 18
+    device_no: 2
+  PXI1Slot6/port0/line19:
+    chan_no: 19
+    device_no: 2
+  PXI1Slot6/port0/line2:
+    chan_no: 2
+    device_no: 2
+  PXI1Slot6/port0/line20:
+    chan_no: 20
+    device_no: 2
+  PXI1Slot6/port0/line21:
+    chan_no: 21
+    device_no: 2
+  PXI1Slot6/port0/line22:
+    chan_no: 22
+    device_no: 2
+  PXI1Slot6/port0/line23:
+    chan_no: 23
+    device_no: 2
+  PXI1Slot6/port0/line24:
+    chan_no: 24
+    device_no: 2
+  PXI1Slot6/port0/line25:
+    chan_no: 25
+    device_no: 2
+  PXI1Slot6/port0/line26:
+    chan_no: 26
+    device_no: 2
+  PXI1Slot6/port0/line27:
+    chan_no: 27
+    device_no: 2
+  PXI1Slot6/port0/line28:
+    chan_no: 28
+    device_no: 2
+  PXI1Slot6/port0/line29:
+    chan_no: 29
+    device_no: 2
+  PXI1Slot6/port0/line3:
+    chan_no: 3
+    device_no: 2
+  PXI1Slot6/port0/line30:
+    chan_no: 30
+    device_no: 2
+  PXI1Slot6/port0/line31:
+    chan_no: 31
+    device_no: 2
+  PXI1Slot6/port0/line4:
+    chan_no: 4
+    device_no: 2
+  PXI1Slot6/port0/line5:
+    chan_no: 5
+    device_no: 2
+  PXI1Slot6/port0/line6:
+    chan_no: 6
+    device_no: 2
+  PXI1Slot6/port0/line7:
+    chan_no: 7
+    device_no: 2
+  PXI1Slot6/port0/line8:
+    chan_no: 8
+    device_no: 2
+  PXI1Slot6/port0/line9:
+    chan_no: 9
+    device_no: 2
+do_chans:
+  PXI1Slot4/port0/line0:
+    chan_no: 0
+    device_no: 0
+  PXI1Slot4/port0/line1:
+    chan_no: 1
+    device_no: 0
+  PXI1Slot4/port0/line2:
+    chan_no: 2
+    device_no: 0
+  PXI1Slot4/port0/line3:
+    chan_no: 3
+    device_no: 0
+  PXI1Slot4/port0/line4:
+    chan_no: 4
+    device_no: 0
+  PXI1Slot4/port0/line5:
+    chan_no: 5
+    device_no: 0
+  PXI1Slot4/port0/line6:
+    chan_no: 6
+    device_no: 0
+  PXI1Slot4/port0/line7:
+    chan_no: 7
+    device_no: 0
+  PXI1Slot4/port1/line0:
+    chan_no: 8
+    device_no: 0
+  PXI1Slot4/port1/line1:
+    chan_no: 9
+    device_no: 0
+  PXI1Slot4/port1/line2:
+    chan_no: 10
+    device_no: 0
+  PXI1Slot4/port1/line3:
+    chan_no: 11
+    device_no: 0
+  PXI1Slot4/port1/line4:
+    chan_no: 12
+    device_no: 0
+  PXI1Slot4/port1/line5:
+    chan_no: 13
+    device_no: 0
+  PXI1Slot4/port1/line6:
+    chan_no: 14
+    device_no: 0
+  PXI1Slot4/port1/line7:
+    chan_no: 15
+    device_no: 0
+  PXI1Slot4/port2/line0:
+    chan_no: 16
+    device_no: 0
+  PXI1Slot4/port2/line1:
+    chan_no: 17
+    device_no: 0
+  PXI1Slot4/port2/line2:
+    chan_no: 18
+    device_no: 0
+  PXI1Slot4/port2/line3:
+    chan_no: 19
+    device_no: 0
+  PXI1Slot4/port2/line4:
+    chan_no: 20
+    device_no: 0
+  PXI1Slot4/port2/line5:
+    chan_no: 21
+    device_no: 0
+  PXI1Slot4/port2/line6:
+    chan_no: 22
+    device_no: 0
+  PXI1Slot4/port2/line7:
+    chan_no: 23
+    device_no: 0
+  PXI1Slot5/port0/line0:
+    chan_no: 0
+    device_no: 1
+  PXI1Slot5/port0/line1:
+    chan_no: 1
+    device_no: 1
+  PXI1Slot5/port0/line2:
+    chan_no: 2
+    device_no: 1
+  PXI1Slot5/port0/line3:
+    chan_no: 3
+    device_no: 1
+  PXI1Slot5/port0/line4:
+    chan_no: 4
+    device_no: 1
+  PXI1Slot5/port0/line5:
+    chan_no: 5
+    device_no: 1
+  PXI1Slot5/port0/line6:
+    chan_no: 6
+    device_no: 1
+  PXI1Slot5/port0/line7:
+    chan_no: 7
+    device_no: 1
+  PXI1Slot6/port0/line0:
+    chan_no: 0
+    device_no: 2
+  PXI1Slot6/port0/line1:
+    chan_no: 1
+    device_no: 2
+  PXI1Slot6/port0/line10:
+    chan_no: 10
+    device_no: 2
+  PXI1Slot6/port0/line11:
+    chan_no: 11
+    device_no: 2
+  PXI1Slot6/port0/line12:
+    chan_no: 12
+    device_no: 2
+  PXI1Slot6/port0/line13:
+    chan_no: 13
+    device_no: 2
+  PXI1Slot6/port0/line14:
+    chan_no: 14
+    device_no: 2
+  PXI1Slot6/port0/line15:
+    chan_no: 15
+    device_no: 2
+  PXI1Slot6/port0/line16:
+    chan_no: 16
+    device_no: 2
+  PXI1Slot6/port0/line17:
+    chan_no: 17
+    device_no: 2
+  PXI1Slot6/port0/line18:
+    chan_no: 18
+    device_no: 2
+  PXI1Slot6/port0/line19:
+    chan_no: 19
+    device_no: 2
+  PXI1Slot6/port0/line2:
+    chan_no: 2
+    device_no: 2
+  PXI1Slot6/port0/line20:
+    chan_no: 20
+    device_no: 2
+  PXI1Slot6/port0/line21:
+    chan_no: 21
+    device_no: 2
+  PXI1Slot6/port0/line22:
+    chan_no: 22
+    device_no: 2
+  PXI1Slot6/port0/line23:
+    chan_no: 23
+    device_no: 2
+  PXI1Slot6/port0/line24:
+    chan_no: 24
+    device_no: 2
+  PXI1Slot6/port0/line25:
+    chan_no: 25
+    device_no: 2
+  PXI1Slot6/port0/line26:
+    chan_no: 26
+    device_no: 2
+  PXI1Slot6/port0/line27:
+    chan_no: 27
+    device_no: 2
+  PXI1Slot6/port0/line28:
+    chan_no: 28
+    device_no: 2
+  PXI1Slot6/port0/line29:
+    chan_no: 29
+    device_no: 2
+  PXI1Slot6/port0/line3:
+    chan_no: 3
+    device_no: 2
+  PXI1Slot6/port0/line30:
+    chan_no: 30
+    device_no: 2
+  PXI1Slot6/port0/line31:
+    chan_no: 31
+    device_no: 2
+  PXI1Slot6/port0/line4:
+    chan_no: 4
+    device_no: 2
+  PXI1Slot6/port0/line5:
+    chan_no: 5
+    device_no: 2
+  PXI1Slot6/port0/line6:
+    chan_no: 6
+    device_no: 2
+  PXI1Slot6/port0/line7:
+    chan_no: 7
+    device_no: 2
+  PXI1Slot6/port0/line8:
+    chan_no: 8
+    device_no: 2
+  PXI1Slot6/port0/line9:
+    chan_no: 9
+    device_no: 2

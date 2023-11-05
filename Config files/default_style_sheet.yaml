@@ -1,0 +1,67 @@
+default theme: light # "light" or "dark"
+
+# ~~~~~ Plot parameters
+threshold for thin line: 202 
+# Will use large width if plotting less points than this value
+# Plotting with a large width a large number of points can be slow
+
+data params:
+  style: solid # "solid", "dash", "dot", "dashdot", "dashdotdot"
+  symbol: o #whether to put a symbol at each point. "null" for no symbol, 'x' or 'o' for a cross or a circle
+  symbol brush: null #color of the symbol filling. "null" for no filling
+  thin width: 1 #width of the line when plotting a large number of points
+  large width: 2 #width of the line when plotting a small number of points
+
+fit params:
+  style: solid
+  symbol: null
+  symbol brush: null
+  thin width: 2
+  large width: 2
+
+trace params:
+  style: dashdot
+  symbol: null
+  symbol brush: null
+  thin width: 1
+  large width: 2
+
+# ~~~~~ Colors
+
+penColors: 
+  dark: [
+    [255, 127, 14], #Orange
+    [31, 119, 180], #Blue
+    [44, 160, 44], #Green
+    [214, 39, 40], #Red
+    [148, 103, 189], #Purple
+    [140, 86, 75], #Brown
+    [227, 119, 194], #Pink
+    [127, 127, 127], #Grey
+    [188, 189, 34], #Yellow
+    [23, 190, 207] #Cyan
+    ] 
+  light: [
+    [31, 119, 180], #Blue
+    [255, 127, 14], #Orange
+    [44, 160, 44], #Green
+    [214, 39, 40], #Red
+    [148, 103, 189], #Purple
+    [140, 86, 75], #Brown
+    [227, 119, 194], #Pink
+    [127, 127, 127], #Grey
+    [188, 189, 34], #Yellow
+    [23, 190, 207] #Cyan
+    ]
+
+infiniteLineColor:
+  dark: [255, 255, 255] #White
+  light: [100, 100, 100] #Grey
+
+pg_labels:
+  font_name: "Arial"
+  font_size: 14
+
+pg_ticks:
+  font_name: "Arial"
+  font_size: 14

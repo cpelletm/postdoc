@@ -1,0 +1,37 @@
+
+#Counter card :
+ctr1: PXI1Slot6/ctr0
+ctr2: PXI1Slot6/ctr1
+
+trig_PL_AWG: PXI1Slot6/PFI34
+trig_PL_NI: PXI1Slot6/PFI38
+
+#AO card :
+sample_vx: PXI1Slot5/ao0
+sample_vy: PXI1Slot5/ao1
+sample_vz: PXI1Slot5/ao2
+
+tip_vx: PXI1Slot5/ao3
+tip_vy: PXI1Slot5/ao4
+tip_vz: PXI1Slot5/ao5
+
+AOM: PXI1Slot5/ao6
+SRS_sweep: PXI1Slot5/ao7
+
+trig_AO_AWG: PXI1Slot5/PFI9
+trig_NI_out: PXI1Slot5/ctr0
+trig_mw: PXI1Slot5/ctr0
+
+#AI card :
+sample_Vx_RO: PXI1Slot4/ai3
+sample_Vy_RO: PXI1Slot4/ai4
+sample_Vz_RO: PXI1Slot4/ai5
+
+tip_Vx_RO: PXI1Slot4/ai0
+tip_Vy_RO: PXI1Slot4/ai1
+tip_Vz_RO: PXI1Slot4/ai2
+
+trig_AI_AWG: PXI1Slot4/PFI9
+trig_AI_NI: PXI1Slot4/PFI0
+
+
