@@ -16,13 +16,17 @@ class experiment_module():
 
     def start_acquisition(self):
         self.status=True
-        print(self.fields['fmin'].value)
+        self.fmin=self.fields['fmin'].value
+        self.fmax=self.fields['fmax'].value
+        self.npoints=self.fields['npoints'].value
+        self.freqs=glib.np.linspace(self.fmin,self.fmax,self.npoints)
+        self.data=glib.np.zeros(len(self.freqs))
         self.timer=glib.QTimer()
         self.timer.timeout.connect(self.acquire_data)
-        self.timer.start(1000)
+        self.timer.start(30)
 
     def acquire_data(self):
-        self.data=glib.np.random.rand(100)
+        self.data=glib.np.random.rand(self.npoints)
     
 
     def stop_acquisition(self):
@@ -49,10 +53,11 @@ class experiment_module():
             callback(self._data)
 
 ######################### Server setup #########################
-station_service=glib.rpyc.connect_by_service("STATION ON "+config['station'], config={'allow_public_attrs': True, 'sync_request_timeout': 10})
-station=station_service.root
-m=station.ESR_GUI_module(config=config)
-# m=experiment_module()
+# station_service=glib.rpyc.connect_by_service("STATION ON "+config['station'])
+# station=station_service.root
+# m=station.ESR_GUI_module(config=config)
+
+m=experiment_module()
 
 ######################### GUI #########################
 
@@ -65,7 +70,7 @@ def setup_GUI(GUI,config,m:experiment_module):
     ax.setYLabel('PL (%s)'%(config['PL']['unit']['name']))
     x=glib.np.linspace(0,1,100)
     y=glib.np.zeros(len(x))
-    l1=ax.addLine(x,y)
+    l1=ax.addLine(x,y,typ='average',label='PL')
 
     #Fields
     fmin=glib.field(labelDesignerWidget=GUI.label_fmin,lineDesignerWidget=GUI.line_fmin,config=config['fmin'],module=m)
@@ -80,35 +85,47 @@ def setup_GUI(GUI,config,m:experiment_module):
     #Buttons
     button_start=glib.button(designerWidget=GUI.button_start)
     button_stop=glib.button(designerWidget=GUI.button_stop)
-    button_add_fit=glib.button(designerWidget=GUI.button_add_fit)
-    button_remove_fit=glib.button(designerWidget=GUI.button_remove_fit)
+    
     button_config_fit=glib.button(designerWidget=GUI.button_config_fit)
     button_add_trace=glib.button(designerWidget=GUI.button_add_trace)
     button_remove_trace=glib.button(designerWidget=GUI.button_remove_trace)
 
     button_save=glib.saveButton(fig=fig,config=config['save'],designerWidget=GUI.button_save,exp_name=experiment_name,sample_name=sample_name)
-
+    button_add_fit=glib.addFitButton(line=l1,config=config['fit'],designerWidget=GUI.button_add_fit)
+    button_remove_fit=glib.removeFitButton(ax=ax,designerWidget=GUI.button_remove_fit)
+    
+    #Checkboxes
+    checkBox_norm=glib.checkBox(designerWidget=GUI.checkBox_norm,initialState=config['norm']['value'])
+    
     #Actions
     button_start.setAction(m.start_acquisition)
     button_stop.setAction(m.stop_acquisition)
+    button_add_trace.setAction(ax.addTrace)
+    button_remove_trace.setAction(ax.removeLastTrace)
+    
 
-    def debug():
-        print('debug')
-        print(dir(m))
-        
-        
-    button_add_fit.setAction(debug)
+    def normAction():
+        ax.setNorm(checkBox_norm.state())
+    checkBox_norm.setAction(normAction)
 
     #Callbacks
     def update_status(status):
         if status:
             button_start.setEnabled(False)
             button_stop.setEnabled(True)
+            l1.reset()
         else:
             button_start.setEnabled(True)
             button_stop.setEnabled(False)
     m.status_callbacks.append(update_status)
     m.status=False
+
+    def update_l1(data):
+        x=m.freqs
+        x=x/config['fmax']['unit']['multiplier']
+        y=data
+        l1.update(x,y)
+    m.data_callbacks.append(update_l1)
 
 
 

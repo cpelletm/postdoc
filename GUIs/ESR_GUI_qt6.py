@@ -1,18 +1,20 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import GUI_lib as glib
+import GUI_lib_qt6 as glib
 
 #Config file
-config=glib.localVariableDic('ESR_GUI.yaml')
-GUI=glib.Graphical_interface(config=config)
+def configDic():
+    return glib.localVariableDic('ESR_GUI.yaml')
+
 ######################### Experimental module #########################
 
 class experiment_module():
-    def __init__(self) -> None:
+    def __init__(self,config) -> None:
         self.status_callbacks=[]
         self.data_callbacks=[]
         self.status=False
         self.fields={}
+        self.config=config
 
     def start_acquisition(self):
         self.status=True
@@ -57,12 +59,12 @@ class experiment_module():
 # station=station_service.root
 # m=station.ESR_GUI_module(config=config)
 
-m=experiment_module()
+
 
 ######################### GUI #########################
 
-def setup_GUI(GUI,config,m:experiment_module):
-
+def setup_GUI(config,m:experiment_module):
+    GUI=glib.Graphical_interface(config=config)
     #Plotting figure
     fig=glib.pgFig(designerWidget=GUI.fig,config=config['fig'])
     ax=fig.addAx(axTitle='ESR')
@@ -93,22 +95,19 @@ def setup_GUI(GUI,config,m:experiment_module):
 
     button_save=glib.saveButton(fig=fig,config=config['save'],designerWidget=GUI.button_save,exp_name=experiment_name,sample_name=sample_name)
 
+    
     #Actions
     button_start.setAction(m.start_acquisition)
     button_stop.setAction(m.stop_acquisition)
 
-    def debug():
-        print('debug')
-        print(dir(m))
-        
-        
-    button_add_fit.setAction(debug)
+    print(button_start.widget.actions())
 
     #Callbacks
     def update_status(status):
         if status:
             button_start.setEnabled(False)
             button_stop.setEnabled(True)
+            l1.reset()
         else:
             button_start.setEnabled(True)
             button_stop.setEnabled(False)
@@ -122,11 +121,17 @@ def setup_GUI(GUI,config,m:experiment_module):
         l1.update(x,y)
     m.data_callbacks.append(update_l1)
 
+    return GUI
+
 
 
 
 if __name__ == "__main__":
-    setup_GUI(GUI,config,m)
-    GUI.run()
+    qApp=glib.QApplication(sys.argv)
+    config=configDic()
+    m=experiment_module(config=config)
+    GUI=setup_GUI(config=config,m=m)
+    GUI.show()
+    sys.exit(qApp.exec())
 
 

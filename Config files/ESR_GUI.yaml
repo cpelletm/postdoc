@@ -89,12 +89,4 @@ save:
 
 
 
-design_file: name@self
-exp_name:
-  value: name@self
-  unit: str
 
-PL_chans: [ctr1@ni_chans, ctr2@ni_chans]
-trig_PL_chan: trig_PL_NI@ni_chans
-trig_out_chan: trig_mw@ni_chans
-ao_sweep_chan: SRS_sweep@ni_chans

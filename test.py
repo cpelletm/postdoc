@@ -4,14 +4,12 @@ import json
 import yaml
 import pyqtgraph as pg
 import numpy as np
-import qslabcontrol
 import qcodes as qc
-import nidaqmx 
-from nidaqmx.system.system import System
+# import nidaqmx 
+# from nidaqmx.system.system import System
 import GUI_lib as glib
 
-def jsonwrite():
-    
+def jsonwrite(): 
     fname=os.path.join(os.path.dirname(__file__),'GUI config files','test_config.json')
     d={}
     d['data large symbol brush']=None
@@ -174,4 +172,67 @@ def square(x):
 def callFunction(func):
     return func()
 
-print(callFunction(lambda : square(2)))
+def Jodok_carbon_guessing_game():
+    kWhToJ=3600000
+    sToMin=60
+    sToH=3600
+    sToDay=24*3600
+
+    compressorPower=10000 #W
+    switzerlandPowerToCo2=0.05/kWhToJ #kg/J
+    compressorCo2Rate=compressorPower*switzerlandPowerToCo2 #kg/s
+
+    LasVegasRoundTripCo2=3000 #kg
+
+    veggieFoodCo2=2.5 #kg Co2/kg food
+    beefFoodCo2=60 #kg Co2/kg food
+
+    LargeVeggiePortionCo2=0.5*veggieFoodCo2 #kg Co2
+    SmallBeefPortionCo2=0.05*beefFoodCo2+0.2*veggieFoodCo2 #kg Co2
+
+    elevatorEnergy=50000 #J (Standars size elevator from ground floor to 3rd floor)
+    elevatorCo2=elevatorEnergy*switzerlandPowerToCo2 #kg Co2
+
+    trainEnergy = 400 #J/m/passenger
+    BaselZurichDistance=80e3 #m
+    BselZurichCommuteCo2=BaselZurichDistance*trainEnergy*switzerlandPowerToCo2*2 #kg Co2 (*2 for round trip)
+
+    boatDeliveryCo2=30e-6 #kg Co2/kg package/km
+    truckDeliveryCo2=210e-6 #kg Co2/kg package/km
+    ShangaiRotterdamDistance=22000 #km
+    BaselRotterdamDistance=680 #km
+    packageWieght=1 #kg
+    AliBabaPackageDeliveryCo2=boatDeliveryCo2*ShangaiRotterdamDistance*packageWieght+truckDeliveryCo2*BaselRotterdamDistance*packageWieght #kg Co2
+
+    bitCoin2022Co2=77e9 #kg Co2/year
+    bitcoin2022Transactions=300000*365 #transactions/year
+    bitcoinTransactionCo2=bitCoin2022Co2/bitcoin2022Transactions #kg Co2/transaction
+
+    humanBreathingOneDayCo2=0.9 #kg Co2/day
+
+    co2Dic={}
+    co2Dic['compressor one day']=compressorCo2Rate*sToDay
+    co2Dic['Las Vegas round trip']=LasVegasRoundTripCo2
+    co2Dic['large veggie portion']=LargeVeggiePortionCo2
+    co2Dic['small beef portion']=SmallBeefPortionCo2
+    co2Dic['elevator']=elevatorCo2
+    co2Dic['Basel Zurich commute']=BselZurichCommuteCo2
+    co2Dic['Ali Baba package delivery']=AliBabaPackageDeliveryCo2
+    co2Dic['bitcoin transaction']=bitcoinTransactionCo2
+    co2Dic['human breathing one day']=humanBreathingOneDayCo2
+
+    def sToDHMS(t):
+        days=int(t/sToDay)
+        hours=int((t-days*sToDay)/sToH)
+        minutes=int((t-days*sToDay-hours*sToH)/sToMin)
+        seconds=int(t-days*sToDay-hours*sToH-minutes*sToMin)
+        return days,hours,minutes,seconds
+
+    for key in co2Dic.keys():
+        print(key+':')
+        print("kg Co2 : %.2e"%(co2Dic[key]))
+        days,hours,minutes,seconds=sToDHMS(co2Dic[key]/compressorCo2Rate)
+        print("Equivalent compressor time : %.2f days, %.2f hours, %.2f minutes, %.2f seconds"%(days,hours,minutes,seconds))
+        print('\n')
+
+Jodok_carbon_guessing_game()

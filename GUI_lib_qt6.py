@@ -9,16 +9,14 @@ import numpy as np
 import csv
 import datetime
 import rpyc
-import importlib.util
-import shutil
 
 
 
-from PyQt5 import QtCore, uic,QtWidgets
-from PyQt5.QtGui import QFont,QTransform,QCloseEvent
-from PyQt5.QtCore import (Qt, QTimer,QSize, QEvent)
-from PyQt5.QtWidgets import (QWidget, QPushButton, QComboBox,
-    QHBoxLayout, QVBoxLayout, QApplication, QDesktopWidget, QMainWindow, QLineEdit, QLabel, QCheckBox, QFileDialog, QErrorMessage, QMessageBox, QFrame)
+from PyQt6 import QtCore, uic,QtWidgets
+from PyQt6.QtGui import QFont,QTransform,QCloseEvent
+from PyQt6.QtCore import (Qt, QTimer,QSize, QEvent)
+from PyQt6.QtWidgets import (QWidget, QPushButton, QComboBox,
+    QHBoxLayout, QVBoxLayout, QApplication,  QMainWindow, QLineEdit, QLabel, QCheckBox, QFileDialog, QErrorMessage, QMessageBox, QFrame)
 
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -28,7 +26,6 @@ import pyqtgraph as pg #Plot library
 import qdarkstyle #For dark mode
 from pyqt_led import Led as ledWidget #For LED widget
 
-qapp = QApplication(sys.argv)
 
 '''
 Config files (.yaml) and design files (.ui) are defined here.
@@ -92,6 +89,7 @@ def localVariableDic(configFileName):
     globalFilename=os.path.join(globalFolder,configFileName)
 
     if not os.path.exists(localFilename):
+        import shutil
         shutil.copyfile(globalFilename,localFilename)
     with open(localFilename,'r') as f:
         dloc=yaml.load(f)
@@ -165,24 +163,9 @@ def localDesignFile(designFileName: str):
 
 
     if not os.path.exists(localFilename):
+        import shutil
         shutil.copyfile(globalFilename,localFilename)
     return localFilename
-
-def localFit(fitFileName: str):
-    if not fitFileName.endswith('.py'):
-        fitFileName+='.py'
-    completeFitFileName=os.path.join(localFitFolder,fitFileName)
-    if not os.path.exists(completeFitFileName):
-        completeGlobalFit=os.path.join(os.path.dirname(__file__),'Fits',fitFileName)
-        if os.path.exists(completeGlobalFit):           
-            shutil.copyfile(completeGlobalFit,completeFitFileName)
-        else :
-            raise FileNotFoundError("Global fit '%s' file not found"%(completeGlobalFit))
-    spec=importlib.util.spec_from_file_location("fit", completeFitFileName)
-    foo=importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(foo)
-    return foo.fit()
-
 
 class styleSheet():
     def __init__(self,configFileName='default_style_sheet.yaml') -> None:
@@ -209,15 +192,15 @@ class styleSheet():
     def lineStyle(self,style : str):
         #Implemented line styles : "solid", "dash", "dot", "dashdot", "dashdotdot"
         if style=='solid':
-            return Qt.SolidLine
+            return Qt.PenStyle.SolidLine
         elif style=='dash':
-            return Qt.DashLine
+            return Qt.PenStyle.DashLine
         elif style=='dot':
-            return Qt.DotLine
+            return Qt.PenStyle.DotLine
         elif style=='dashdot':
-            return Qt.DashDotLine
+            return Qt.PenStyle.DashDotLine
         elif style=='dashdotdot':
-            return Qt.DashDotDotLine
+            return Qt.PenStyle.DashDotDotLine
         
     def plottingArgs(self,style,penIndex,ydata):
         #Supported styles : "data", "trace", "fit"
@@ -407,7 +390,7 @@ class pgAx(pg.PlotItem):
         self.legend=self.addLegend(labelTextSize='15pt')
         #Create the catalog of lines ,infinite lines, traces and fits in the ax
         self.infiniteLines=[]
-        self.dataLines=[]
+        self.lines=[]
         self.traces=[]
         self.fits=[]
         #Adds the ax to the figure
@@ -415,7 +398,6 @@ class pgAx(pg.PlotItem):
         tickFont=QFont(self.ss.d['pg_ticks']['font_name'],self.ss.d['pg_ticks']['font_size'])
         self.getAxis('bottom').setTickFont(font=tickFont)
         self.getAxis('left').setTickFont(font=tickFont)
-        self.norm=False
 
     def addLine(self,x=[],y=[],typ='instant',label=None,addToLegend=False):
         '''
@@ -429,48 +411,30 @@ class pgAx(pg.PlotItem):
         self.penIndices[penIndex]=False
         #Creates the line
         if not label:
-            label='Line %i'%(len(self.allLines())+1)
-        l=pgLine(ax=self,penIndex=penIndex,x=x,y=y,typ=typ,label=label,addToLegend=addToLegend,norm=self.norm)
+            label='Line %i'%(len(self.lines)+1)
+        l=pgLine(ax=self,penIndex=penIndex,x=x,y=y,typ=typ,label=label,addToLegend=addToLegend)
         #Adds the line to the ax
         self.addItem(l)
         #Adds the line to the line inventory
-        if typ=='instant' or typ=='average' or typ=='scroll' :
-            self.dataLines+=[l]
-        elif typ=='trace':
-            self.traces+=[l]
-        elif typ=='fit':
-            self.fits+=[l]
+        self.lines+=[l]
         return l
-
-    def allLines(self):
-        return self.dataLines+self.traces+self.fits
-    
-    def setNorm(self,norm:bool):
-        self.norm=norm
-        for line in self.allLines():
-            line.setNorm(norm)
-
-    def addTrace(self):
-        for line in self.dataLines:
-            label='Trace %i'%(len(self.traces)+1)
-            self.addLine(x=line.x,y=line.y,typ='trace',label=label)
-        
-    def removeLastTrace(self):
-        if len(self.traces)>0:
-            self.removeLine(self.traces[-1])
     
     def removeLine(self,line):
         self.removeItem(line)
-        if line.typ=='instant' or line.typ=='average' or line.typ=='scroll' :
-            self.dataLines.remove(line)
-        elif line.typ=='trace':
-            self.traces.remove(line)
-        elif line.typ=='fit':
-            self.fits.remove(line)
+        self.lines.remove(line)
         if line.existingLegend :
             self.legend.removeItem(line)
         self.penIndices[line.penIndex]=True
         
+    def addTrace(self,line,label=None):
+        t=self.addLine(x=line.x,y=line.y,typ='trace',label=label)
+        self.traces+=[t]
+        return t
+    
+    def removeTrace(self,trace):
+        self.traces.remove(trace)
+        self.removeLine(trace)
+
     def nextPenIndex(self):
         for i in range(len(self.penIndices)):
             if self.penIndices[i]:
@@ -486,19 +450,17 @@ class pgAx(pg.PlotItem):
         self.setLabel('left',label,**labelStyle)
 
     def saveData(self,filename):
-        for line in self.allLines():
+        for line in self.lines:
             line.saveData(filename)
 
 class pgLine(pg.PlotDataItem):
-    def __init__(self,ax:pgAx,penIndex,x,y,typ,label,addToLegend,norm):
+    def __init__(self,ax:pgAx,penIndex,x,y,typ,label,addToLegend):
         
         self.ax=ax
         self.typ=typ
         self.penIndex=penIndex
         self.label=label
         self.addToLegend=addToLegend
-        self.norm=norm #Norm only affects display, the data is always stored with its real value
-
         if len(x)==0:
             x=np.linspace(0,1,101)
         if len(y)==0:
@@ -521,12 +483,12 @@ class pgLine(pg.PlotDataItem):
         self.updateLegend(label)
 
         self.nIteration=0 
+        self.norm=False #Norm only affects display, the data is always stored with its real value
 
 
 
     def setNorm(self,norm=True):
         self.norm=norm
-        self.redraw()
 
     def updateLegend(self,label):
         if self.addToLegend :
@@ -549,9 +511,6 @@ class pgLine(pg.PlotDataItem):
         self.nIteration=0
         self.x=np.array([])
         self.y=np.array([])
-
-    def redraw(self):
-        self.update(self.x,self.y,bypassRefresh=True)
 
     def update(self,x=[],y=[],bypassRefresh=False):
         """
@@ -718,7 +677,7 @@ class Graphical_interface(QMainWindow) :
         self.widget.setStyleSheet(style)
     def run(self):
         self.show()
-        qapp.exec_()
+        qapp.exec()
     def closeEvent(self, event): 
         self.close()
     def excepthook(self,exc_type, exc_value, exc_tb):
@@ -837,8 +796,7 @@ class checkBox(generalWidget):
             self.widget=designerWidget
         else :
             self.widget=QCheckBox(name)
-
-        self.setState(initialState)
+            self.setState(initialState)
         if action :
             self.setAction(action)  
     def setAction(self,action):		
@@ -1024,13 +982,13 @@ class abstractField():
 
 class saveButton(button):
     def __init__(self,fig:pgFig, config:dict, designerWidget:QPushButton=None, exp_name:field=None, sample_name:field=None):
-        super().__init__(designerWidget=designerWidget)
+        super().__init__(designerWidget=designerWidget,action=self.save)
+        print(self.widget.actions())
         self.config=config
         self.fig=fig
         self.exp_name=exp_name
         self.sample_name=sample_name
-        self.setAction(lambda : self.save()) #Dont ask me why but just putting self.save as the action does not work
-        #Seriously wtf Qt ?
+        print('Saving data in %s'%self.folder())
     def folder(self):
         saveFolder=computerDic['save_folder']
         expFolder=self.config['folder']
@@ -1107,34 +1065,6 @@ class stationConnect(button):
         c=rpyc.connect(self.stations[stationName]['IP_address'],self.stations[stationName]['port'])
         print(c.root.uptime())
 
-class addFitButton(button):
-    def __init__(self,line:pgLine,config:dict,designerWidget:QPushButton=None,ax='sameAsLine'):
-        super().__init__(name='Add fit',designerWidget=designerWidget)
-        if ax=='sameAsLine':
-            ax=line.ax
-        self.ax=ax
-        self.line=line
-        self.fit=localFit(config['fit_function'])
-        self.setAction(lambda: self.addFit())
-    def addFit(self):
-        x=self.line.x
-        y=self.line.y
-        try :
-            self.fit.fit(x,y)
-        except Exception as e:
-            print(e)
-            return
-            
-        self.ax.addLine(x=x,y=self.fit.fittedY,typ='fit',label=self.fit.legend(),addToLegend=True)
-
-class removeFitButton(button):
-    def __init__(self,ax:pgAx,designerWidget:QPushButton=None):
-        super().__init__(name='Remove fit',designerWidget=designerWidget)
-        self.ax=ax
-        self.setAction(lambda: self.removeFit())
-    def removeFit(self):
-        if len(self.ax.fits)>0:
-            self.ax.removeLine(self.ax.fits[-1])
 
 class mpt_colormap(generalWidget):
     def __init__(self):
@@ -1239,7 +1169,7 @@ def testWithDesigner():
     startStop=startStopButtons(initAction=init,stopAction=cleanUp,updateAction=update,startDesignerWidget=GUI.start,stopDesignerWidget=GUI.stop)
 
     GUI.show()
-    qapp.exec_()
+    qapp.exec()
 def testpgFig():
     ss=styleSheet()
     gra=pgFig(style=ss)
@@ -1290,16 +1220,5 @@ def test_pg():
     # print(dir(GUI))
     GUI.run()
 
-def test_fit_params_window():
-    import matplotlib.pyplot as plt
-    fit=localFit('Lorentzian')
-    # x=np.linspace(0,50,101)
-    # y=10-2*1/(1+((x-20)/7)**2)+np.random.normal(0,0.1,101)
-    # plt.plot(x,y)
-    # fit.fit(x,y)
-    # plt.plot(x,fit.fitting_curve)
-    # plt.show()
-    for param in fit.free_param_guess.keys():
-        pass
 if __name__ == "__main__":
-    test_fit_params_window()
+    testWithDesigner()
