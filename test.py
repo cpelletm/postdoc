@@ -235,4 +235,5 @@ def Jodok_carbon_guessing_game():
         print("Equivalent compressor time : %.2f days, %.2f hours, %.2f minutes, %.2f seconds"%(days,hours,minutes,seconds))
         print('\n')
 
-Jodok_carbon_guessing_game()
+a=[-1,2,-3]
+print(np.max(np.abs(a)))

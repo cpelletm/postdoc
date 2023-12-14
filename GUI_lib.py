@@ -4,7 +4,7 @@ import time
 import traceback
 from ruamel.yaml import YAML
 yaml=YAML()
-import typing
+from typing import Literal
 import numpy as np
 import csv
 import datetime
@@ -28,7 +28,6 @@ import pyqtgraph as pg #Plot library
 import qdarkstyle #For dark mode
 from pyqt_led import Led as ledWidget #For LED widget
 
-qapp = QApplication(sys.argv)
 
 '''
 Config files (.yaml) and design files (.ui) are defined here.
@@ -185,16 +184,15 @@ def localFit(fitFileName: str):
 
 
 class styleSheet():
-    def __init__(self,configFileName='default_style_sheet.yaml') -> None:
+    def __init__(self,qapp,configFileName='default_style_sheet.yaml') -> None:
         self.d=localVariableDic(configFileName)
         self.theme=self.d['default theme']  
         if self.theme=='light':
             #Global Config of pyqtgrqph (dark by default)
             pg.setConfigOption('background', 'w')
             pg.setConfigOption('foreground', 'k')	
-            #Default colors of matplotlib		
         if self.theme=='dark':
-            #Global config of pyQT (lifgt by default)
+            #Global config of pyQT (light by default)
             qapp.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5'))
 
         self.penColors=self.d['penColors'][self.theme]
@@ -342,17 +340,13 @@ class box(generalWidget):
         box.addLayout(self.box)
 
 class pgFig(generalWidget) :
-    def __init__(self,style :styleSheet=None, designerWidget=None, size=None,refreshRate=10,title=None, config:dict=None):
+    def __init__(self,styleSheet:styleSheet, designerWidget=None, size=None,refreshRate=10,title=None, config:dict=None):
         #refreshRate in frames per second
         super().__init__()
         if config:
-            if 'style_sheet' in config.keys():
-                style=styleSheet(config['style_sheet'])
             if 'refresh_rate' in config.keys():
                 refreshRate=config['refresh_rate']
-        if style==None:
-            style=styleSheet()
-        self.style=style
+        self.ss=styleSheet
         if designerWidget==None:
             # self.widget=pg.GraphicsLayoutWidget(size=size,title=title)
             self.widget=designerWidget
@@ -399,10 +393,11 @@ class pgFig(generalWidget) :
 class pgAx(pg.PlotItem):
     def __init__(self,title :str, fig :pgFig):
         super().__init__(title=title)
+        self.baseTitle=title
         self.fig=fig
-        self.ss=self.fig.style
+        self.ss=self.fig.ss
         #Create the list of available colors (True = available, False = taken)
-        self.penIndices=[True]*len(self.fig.style.penColors)
+        self.penIndices=[True]*len(self.ss.penColors)
         #Create space for legend
         self.legend=self.addLegend(labelTextSize='15pt')
         #Create the catalog of lines ,infinite lines, traces and fits in the ax
@@ -417,7 +412,7 @@ class pgAx(pg.PlotItem):
         self.getAxis('left').setTickFont(font=tickFont)
         self.norm=False
 
-    def addLine(self,x=[],y=[],typ='instant',label=None,addToLegend=False):
+    def addLine(self,x=[],y=[],typ='instant',label=None,addToLegend=False,updateIter=True):
         '''
         typ='instant' : when given a new set of x and y value will replace the previous line
         typ='average' : will add the new x and/or y value to the current line and average with the proper weight
@@ -430,7 +425,7 @@ class pgAx(pg.PlotItem):
         #Creates the line
         if not label:
             label='Line %i'%(len(self.allLines())+1)
-        l=pgLine(ax=self,penIndex=penIndex,x=x,y=y,typ=typ,label=label,addToLegend=addToLegend,norm=self.norm)
+        l=pgLine(ax=self,penIndex=penIndex,x=x,y=y,typ=typ,label=label,addToLegend=addToLegend,norm=self.norm,updateIter=updateIter)
         #Adds the line to the ax
         self.addItem(l)
         #Adds the line to the line inventory
@@ -478,11 +473,19 @@ class pgAx(pg.PlotItem):
         return i
     
     def setXLabel(self,label):
-        labelStyle={'font-size': '%ipt'%(self.ss.d['pg_labels']['font_size'])}
+        if self.ss.d['default theme']=='dark':
+            color='white'
+        else :
+            color='black'
+        labelStyle={'font-size': '%ipt'%(self.ss.d['pg_labels']['font_size']),'color':color}
         self.setLabel('bottom',label,**labelStyle)
 
     def setYLabel(self,label):
-        labelStyle={'font-size': '%ipt'%(self.ss.d['pg_labels']['font_size'])}
+        if self.ss.d['default theme']=='dark':
+            color='white'
+        else :
+            color='black'
+        labelStyle={'font-size': '%ipt'%(self.ss.d['pg_labels']['font_size']),'color':color}
         self.setLabel('left',label,**labelStyle)
 
     def saveData(self,filename):
@@ -490,14 +493,25 @@ class pgAx(pg.PlotItem):
             line.saveData(filename)
 
 class pgLine(pg.PlotDataItem):
-    def __init__(self,ax:pgAx,penIndex,x,y,typ,label,addToLegend,norm):
+    def __init__(self,
+                 ax:pgAx,
+                 penIndex:int,
+                 x:np.array,
+                 y:np.array,
+                 typ:Literal['instant','average','scroll','trace','fit'],
+                 label:str,
+                 addToLegend:bool,
+                 norm:bool,
+                 updateIter:bool):
         
         self.ax=ax
         self.typ=typ
         self.penIndex=penIndex
         self.label=label
         self.addToLegend=addToLegend
+        self.ss=self.ax.ss
         self.norm=norm #Norm only affects display, the data is always stored with its real value
+        self.updateIter=updateIter #Will update the number of iterations on the title of the plot
 
         if len(x)==0:
             x=np.linspace(0,1,101)
@@ -510,7 +524,6 @@ class pgLine(pg.PlotDataItem):
             self.plotType='data'
         else :
             self.plotType=self.typ
-        self.ss=self.ax.fig.style
         #Collects the plotting parameters for the line
         plotArgs=self.ss.plottingArgs(style=self.plotType,penIndex=self.penIndex,ydata=self.y)
 
@@ -612,10 +625,13 @@ class pgLine(pg.PlotDataItem):
 
         if show :
             plotArgs=self.ss.plottingArgs(style=self.plotType,penIndex=self.penIndex,ydata=self.y)
+            yToPlot=self.y
             if self.norm :
-                yToPlot=self.y/max(y)
-            else :
-                yToPlot=self.y
+                normFactor=np.max(np.abs(self.y))
+                if normFactor!=0:
+                    yToPlot=self.y/normFactor
+            if self.updateIter:
+                self.ax.setTitle(self.ax.baseTitle+' (%i)'%(self.nIteration))
             self.setData(self.x,yToPlot,**plotArgs)
 
 class pgMap(pg.ImageItem):
@@ -660,7 +676,17 @@ class mplFig(box):
         self.axes=[]
         
 class Graphical_interface(QMainWindow) :
-    def __init__(self,*itemLists,designerFile='',title='Unnamed',size='default',keyPressed='default', keyReleased='default',parent=None, config:dict=None):
+    def __init__(self,
+                 qapp,
+                 *itemLists,
+                 designerFile='',
+                 title='Unnamed',
+                 size='default',
+                 keyPressed='default', 
+                 keyReleased='default',
+                 parent=None, 
+                 config:dict=None, 
+                 styleSheetFile='default_style_sheet.yaml'):
         super().__init__(parent=parent) #Creates a window
 
         if config!=None:
@@ -669,12 +695,15 @@ class Graphical_interface(QMainWindow) :
             if "name" in config.keys():
                 title=config["name"]
             if "style_sheet" in config.keys():
-                self.style=styleSheet(config['style_sheet'])
+                styleSheetFile= config['style_sheet']
+
         sys.excepthook=self.excepthook #If the GUI crash, it will execute self.excepthook which calls self.closeEvent
 
         self.title=title #if loading UI form designer, this will be ignored
         self.keyPressed=keyPressed #Function to be called when a key is pressed and the window is in focus, see examples
         self.keyReleased=keyReleased #Same for released key
+        self.qapp=qapp
+        self.styleSheet=styleSheet(qapp,configFileName=styleSheetFile)
         if designerFile :
             uic.loadUi(localDesignFile(designerFile), self)
         else :
@@ -718,7 +747,7 @@ class Graphical_interface(QMainWindow) :
         self.widget.setStyleSheet(style)
     def run(self):
         self.show()
-        qapp.exec_()
+        self.qapp.exec_()
     def closeEvent(self, event): 
         self.close()
     def excepthook(self,exc_type, exc_value, exc_tb):
@@ -850,6 +879,9 @@ class checkBox(generalWidget):
         return(self.widget.isChecked())
 
 class comboBox(generalWidget):
+    #Comboboxes are basically menus
+    #I implemented here the possibility to access the entry either by its index or by its text
+    #I added a dictionary to store the index of each entry to make things easier
     def __init__(self,*items,action=False,actionType='currentIndexChanged',designerWidget:QComboBox=None):
         super().__init__()
         #Remark : a combo box with no entry is condered as 'False'
@@ -870,52 +902,37 @@ class comboBox(generalWidget):
         else :
             raise ValueError('Action type not understood')
     def index(self):
+        #Returns the index of the current entry
         return self.widget.currentIndex()
-    def setIndex(self,index):
-        if isinstance(index,str) :
-            i=self.dic[index]
+    def setValue(self,v):
+        #v can be either the index or the text of the entry
+        if isinstance(v,str) :
+            i=self.dic[v]
         else :
-            i=index
+            i=v
         return self.widget.setCurrentIndex(i)
     def text(self):
+        #Returns the text of the current entry
         return self.widget.currentText()
     def addItem(self,item):
-        self.dic[item]=self.widget.count() #je le fait avant pour qu'il commence à 0
+        self.dic[item]=self.widget.count() #Doing it first so its starts at 0
         self.widget.addItem(item)
     def addItems(self,items):
         for item in items :
             self.addItem(item)
     def removeItem(self,item):
-        #Attention : ca vire pas du dictionnaire. Faudrait faire ça plus propre
         if isinstance(item,str) :
             i=self.dic[item]
+            key=item
         else :
             i=item
-        return self.widget.removeItem(i)
+            key=self.widget.itemText(i)
+        self.widget.removeItem(i)
+        self.dic.pop(key)
     def removeAll(self):
         self.widget.clear()
         self.dic={}
 
-class dropDownMenu(box):
-    def __init__(self,name,*items,action=False,actionType='currentIndexChanged'):
-        self.label=label(name)
-        self.cb=comboBox(*items,action=action,actionType=actionType)
-        super().__init__(self.label,self.cb,typ='V')
-
-    def setAction(self,action,actionType='currentIndexChanged'):
-        return self.cb.setAction(action=action,actionType=actionType)
-    def index(self):
-        return self.cb.index()
-    def setIndex(self,index):
-        return self.cb.setIndex(index)
-    def text(self):
-        return self.cb.text()
-    def addItem(self,item):
-        return self.cb.addItem(item)
-    def removeItem(self,item):
-        return self.cb.removeItem(item)
-    def removeAll(self):
-        return self.cb.removeAll()
 
 class lineEdit(generalWidget):
     def __init__(self,initialValue='noValue',action="update",precision='exact',designerWidget:QLineEdit=None): 
@@ -1213,7 +1230,8 @@ def changeColorWhenInFocus(oldWidget,newWidget):
         oldWidget.setStyleSheet(style)
 
 def testWithDesigner():
-    GUI=Graphical_interface(designerFile=localDesignFile('testUI'),title='Example GUI')
+    qapp=QApplication(sys.argv)
+    GUI=Graphical_interface(qapp=qapp, designerFile=localDesignFile('testUI'),title='Example GUI')
 
     # class MainWindow(QtWidgets.QMainWindow):
     #     def __init__(self, *args, **kwargs):
@@ -1240,26 +1258,10 @@ def testWithDesigner():
 
     GUI.show()
     qapp.exec_()
-def testpgFig():
-    ss=styleSheet()
-    gra=pgFig(style=ss)
-    ax=gra.addAx()
-    x=np.linspace(0,10,101)
-    y=np.cos(x)
-    y2=np.sin(x)
-    
-    l1=pgLine(x=x,y=y2,ax=ax,penIndex=0,typ='instant',label=None)
-    ax.addItem(l1)
-    gra.widget.show()
-    qapp.exec_()
-    # pg.QtGui.QGuiApplication.exec_()
-    # l1=ax.addLine(x,y)
-    # GUI=Graphical_interface(gra,title='Example GUI')
-    # GUI.run()
 
 def test_pg():
 
-
+    qapp=QApplication(sys.argv)
     f1=field('toto',10)
     f2=field('toto2',5)
     fields=[f1,f2]

@@ -4,8 +4,6 @@ designer_file: name@self #so 'ESR_GUI.ui' in this case
 style_sheet: default_style_sheet #name of the style sheet file in Config files folder
 station: LT_ATTODRY #select_station to select your station at startup
 
-
-
 #~~~~~~~~~~~~~ Instrument settings
 mw_source: SMBV@instruments
 
@@ -23,6 +21,24 @@ ni_daq:
 PL:
   unit: kcps@units
 
+#~~~~~~~~~~~~~ Figures settings
+fig:
+  refresh_rate: 30 #Images per sconds
+  style_sheet: style_sheet@self
+
+#~~~~~~~~~~~~~ Save settings
+save:
+  folder: name@self
+  ask_name: false
+  subfolders: y   # 'null' for no subfolders, 'y' for a subfolder per year, 'm' for a subfolder per month, 'd' for a subfolder per day, 'ymd' for a subfolder per year, month and day
+  save_data: true
+  save_data_type: csv # only csv supported for now
+  save_fig: true
+
+#~~~~~~~~~~~~~ Fit settings
+fit:
+  fit_function: Lorentzian
+
 #~~~~~~~~~~~~~ Fields parameters
 #Fields have the form : field_name: {name:name (unique identifier of the field), value: default value, unit: unit@units}
 
@@ -34,7 +50,7 @@ fmin:
 
 fmax:
   name: fmax
-  value: 2950
+  value: 3000
   unit: MHz@units
   precision: 3
 
@@ -71,21 +87,10 @@ channel:
   name: channel
   value: ctr1
 
-
-#~~~~~~~~~~~~~ Figures settings
-fig:
-  refresh_rate: 30 #Images per sconds
-  style_sheet: style_sheet@self
-
-#~~~~~~~~~~~~~ Save settings
-save:
-  folder: name@self
-  ask_name: false
-  subfolders: y   # 'null' for no subfolders, 'y' for a subfolder per year, 'm' for a subfolder per month, 'd' for a subfolder per day, 'ymd' for a subfolder per year, month and day
-  save_data: true
-  save_data_type: csv # only csv supported for now
-  save_fig: true
-
+#~~~~~~~~~~~~~ CheckBox parameters
+norm:
+  name: norm
+  value: false
 
 
 

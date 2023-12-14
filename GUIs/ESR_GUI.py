@@ -2,9 +2,11 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import GUI_lib as glib
 
+qapp=glib.QApplication([])
+
 #Config file
-config=glib.localVariableDic('ESR_GUI.yaml')
-GUI=glib.Graphical_interface(config=config)
+config=glib.localVariableDic('Experiments/ESR_GUI.yaml')
+GUI=glib.Graphical_interface(config=config,qapp=qapp)
 ######################### Experimental module #########################
 
 class experiment_module():
@@ -64,7 +66,7 @@ m=experiment_module()
 def setup_GUI(GUI,config,m:experiment_module):
 
     #Plotting figure
-    fig=glib.pgFig(designerWidget=GUI.fig,config=config['fig'])
+    fig=glib.pgFig(styleSheet=GUI.styleSheet, designerWidget=GUI.fig,config=config['fig'])
     ax=fig.addAx(axTitle='ESR')
     ax.setXLabel('Freq. (%s)'%(config['fmax']['unit']['name']))
     ax.setYLabel('PL (%s)'%(config['PL']['unit']['name']))

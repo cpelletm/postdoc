@@ -1,0 +1,5 @@
+AOM_voltage:
+  unit: V@units
+  value: 0
+
+AOM_NI_chan: AOM@ni_chans
