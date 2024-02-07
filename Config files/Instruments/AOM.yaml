@@ -1,5 +1,17 @@
-AOM_voltage:
-  unit: V@units
-  value: 0
+name: AOM
 
-AOM_NI_chan: AOM@ni_chans
+Voltage:
+  name: AOM_voltage
+  unit: V@units
+  default_value: 0
+  precision: 3
+  min_value: 0
+  max_value: 1
+
+NI_chan: AOM@ni_chans
+
+IDN:
+  vendor: unspecified
+  model: unspecified
+  serial: unspecified
+  firmware: N/A

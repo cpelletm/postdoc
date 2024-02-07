@@ -28,6 +28,9 @@ import pyqtgraph as pg #Plot library
 import qdarkstyle #For dark mode
 from pyqt_led import Led as ledWidget #For LED widget
 
+from qcodes import Parameter, validators as vals, instrument
+
+qapp=QtWidgets.QApplication([])
 
 '''
 Config files (.yaml) and design files (.ui) are defined here.
@@ -38,6 +41,8 @@ and one local (emplacement stored in Local folder.txt) which can be customized b
 The local version overrides the global version,
 but if a variable is not present in the local version, it will be added with the default value from the global version.
 '''
+
+#~~~~~~~~~~~~~~~~~~~~ Config folders ~~~~~~~~~~~~~~~~~~~~#
 
 def findLocalFolder():
     #Find the local folder where the config (yaml) and design files are stored
@@ -55,9 +60,16 @@ def findLocalFolder():
     if not os.path.exists(localFolder):
         raise FileNotFoundError("LOCAL_FOLDER environment variable points to a non existing folder")
    
+    #Makes sure the local config folder and subfolders exists
     localConfigFolder=os.path.join(localFolder,'Config files')
     if not os.path.exists(localConfigFolder):
         os.mkdir(localConfigFolder)
+    if not os.path.exists(os.path.join(localConfigFolder,'Experiments')):
+        os.mkdir(os.path.join(localConfigFolder,'Experiments'))
+    if not os.path.exists(os.path.join(localConfigFolder,'Instruments')):
+        os.mkdir(os.path.join(localConfigFolder,'Instruments'))
+
+    #Same for the design folders
     localDesignFolder=os.path.join(localFolder,'GUI design files')
     if not os.path.exists(localDesignFolder):
         os.mkdir(localDesignFolder)
@@ -71,15 +83,16 @@ def findLocalFolder():
 
 localConfigFolder,localDesignFolder,localFitFolder,localPulseFolder=findLocalFolder()
 
+#~~~~~~~~~~~~~~~~~~~~ Config files ~~~~~~~~~~~~~~~~~~~~#
+
 def updateYamlFile(filename, d):
     #Updates the yaml file with the dictionnary d
     if not filename.endswith('.yaml'):
         filename+='.yaml'
     filename=os.path.join(localConfigFolder,filename)
     with open(filename,'w') as f:
-        yaml.dump(d,f)
+        yaml.dump(d,f)   
 
-#TODO : make the copying recursive
 #TODO : make file@save@ESR work
 def localVariableDic(configFileName):
     #Returns a dictionnary with all local variables. If a variable is not present in the local file (after a code update for instance), it will update the local file with the default value form the global file
@@ -135,22 +148,6 @@ def localVariableDic(configFileName):
 
     return recursiveAll(dloc)
 
-
-
-computerDic=localVariableDic('Computer.yaml')
-def checkComputerDic():
-    change=False
-    if computerDic['computer_name']=="":
-        print("Computer name not found. Please enter a neame for this computer :")
-        computerDic['computer_name']=input()
-        change=True
-    if computerDic['save_folder']=="":
-        computerDic['save_folder']=QFileDialog.getExistingDirectory(None, "Select Save Folder")
-        change=True
-    if change:
-        updateYamlFile('Computer.yaml',computerDic)
-checkComputerDic()
-
 def localDesignFile(designFileName: str):   
     #Returns the path to the local design file. If it doesn't exist, it will create it from the global design file
     if not designFileName.endswith('.ui'):
@@ -182,9 +179,28 @@ def localFit(fitFileName: str):
     spec.loader.exec_module(foo)
     return foo.fit()
 
+def checkComputerDic():
+    change=False
+    if computerDic['computer_name']=="":
+        print("Computer name not found. Please enter a neame for this computer :")
+        computerDic['computer_name']=input()
+        change=True
+    if computerDic['save_folder']=="":
+        computerDic['save_folder']=QFileDialog.getExistingDirectory(None, "Select Save Folder")
+        change=True
+    if change:
+        updateYamlFile('Computer.yaml',computerDic)
+
+#Usefule libraries and checks
+computerDic=localVariableDic('Computer.yaml')
+unitsDic=localVariableDic('units')
+checkComputerDic()
+
+
+
 
 class styleSheet():
-    def __init__(self,qapp,configFileName='default_style_sheet.yaml') -> None:
+    def __init__(self,configFileName='default_style_sheet.yaml') -> None:
         self.d=localVariableDic(configFileName)
         self.theme=self.d['default theme']  
         if self.theme=='light':
@@ -340,23 +356,28 @@ class box(generalWidget):
         box.addLayout(self.box)
 
 class pgFig(generalWidget) :
-    def __init__(self,styleSheet:styleSheet, designerWidget=None, size=None,refreshRate=10,title=None, config:dict=None):
+    def __init__(self,style='default_style_sheet.yaml', designerWidget=None, size=None,refreshRate=10,title=None, config:dict=None):
         #refreshRate in frames per second
         super().__init__()
         if config:
             if 'refresh_rate' in config.keys():
                 refreshRate=config['refresh_rate']
-        self.ss=styleSheet
+            if 'title' in config.keys():
+                title=config['title']
+            if 'style' in config.keys():
+                style=config['style']
+            
+
+        self.ss=styleSheet(style)
         if designerWidget==None:
-            # self.widget=pg.GraphicsLayoutWidget(size=size,title=title)
-            self.widget=designerWidget
+            self.widget=pg.GraphicsLayoutWidget(size=size,title=title)
         else :
-            self.widget=pg.GraphicsLayoutWidget(title=title,parent=designerWidget,size=[designerWidget.width(),designerWidget.height()])   
-            # self.widget=designerWidget
+            # self.widget=pg.GraphicsLayoutWidget(title=title,parent=designerWidget,size=[designerWidget.width(),designerWidget.height()])   
+            self.widget=designerWidget
         self.axes=[] #Contains axes and maps
         self.refreshRate=refreshRate
         self.timeLastUpdate=time.time()
-    def addAx(self, map=False, row=None, col=None, rowspan=1, colspan=1, axTitle=None):
+    def addAx(self, map=False, row=None, col=None, rowspan=1, colspan=1, axTitle=''):
         if map :
             ax=pgMap(title=axTitle, fig=self)
         else :
@@ -677,7 +698,6 @@ class mplFig(box):
         
 class Graphical_interface(QMainWindow) :
     def __init__(self,
-                 qapp,
                  *itemLists,
                  designerFile='',
                  title='Unnamed',
@@ -702,8 +722,7 @@ class Graphical_interface(QMainWindow) :
         self.title=title #if loading UI form designer, this will be ignored
         self.keyPressed=keyPressed #Function to be called when a key is pressed and the window is in focus, see examples
         self.keyReleased=keyReleased #Same for released key
-        self.qapp=qapp
-        self.styleSheet=styleSheet(qapp,configFileName=styleSheetFile)
+        self.styleSheet=styleSheet(configFileName=styleSheetFile)
         if designerFile :
             uic.loadUi(localDesignFile(designerFile), self)
         else :
@@ -747,7 +766,7 @@ class Graphical_interface(QMainWindow) :
         self.widget.setStyleSheet(style)
     def run(self):
         self.show()
-        self.qapp.exec_()
+        qapp.exec_()
     def closeEvent(self, event): 
         self.close()
     def excepthook(self,exc_type, exc_value, exc_tb):
@@ -985,59 +1004,79 @@ class lineEdit(generalWidget):
 
 class field(lineEdit):
     def __init__(
-            self,name='',
+            self,
+            name='',
             initialValue='noValue',
             action=False,
             precision='exact',
+            unit='no_unit',
             labelDesignerWidget:QLabel=None,
             lineDesignerWidget:QLineEdit=None,
-            config:dict=None,
-            addUnitToLabel='default',
-            module=None
+            config:dict=None
             ):  
+              
+        if config :
+            if "name" in config:
+                name=config["name"]
+            if "default_value" in config:
+                initialValue=config["default_value"]
+            if "precision" in config:
+                precision=config["precision"]
+            if "unit" in config:
+                unit=config["unit"]
+        if isinstance(unit,str):
+            unit=unitsDic[unit]
+        self.unit=unit
         super().__init__(initialValue=initialValue,action=action,precision=precision,designerWidget=lineDesignerWidget)
         self.label=label(name,designerWidget=labelDesignerWidget)
-        if config :
-            if "precision" in config.keys():
-                self.precision=config["precision"]
-            name=config['name']
-            self.unit=config['unit']
-            self.value=config['value']
-            if addUnitToLabel=='default':
-                addUnitToLabel=(self.unit['base']!='no_unit')
-            if addUnitToLabel :
-                self.label.text+=' (%s)'%self.unit['name']
-            if module:
-                if name in module.fields.keys():
-                    self.abstract_field=module.fields[name]
-                    self.abstract_field.fieldCollection+=[self]
-                else :
-                    self.abstract_field=abstractField(self)
-                    module.fields[name]=self.abstract_field
-                self.setAction(self.updateAbstractField)
 
-    def updateAbstractField(self):
-        new_value=self.convertTextToValue(self.widget.text())
-        new_value=valueToBaseUnit(new_value,self.unit)
-        self.abstract_field.value=new_value
+        if self.unit['base']!='no_unit':
+            self.label.text+=' (%s)'%self.unit['base']
 
     def addToBox(self, box):
         box.addWidget(self.label.widget)
         box.addWidget(self.widget)
 
-class abstractField():
-    def __init__(self, f:field):
-        self.fieldCollection=[f]
-        self.value=valueToBaseUnit(f.value,f.unit)
+class fieldParameter(field):
+    def __init__(
+            self,
+            parameter:Parameter,
+            name='',
+            initialValue='noValue',
+            action=False,
+            precision='exact',
+            unit='no_unit',
+            labelDesignerWidget:QLabel=None,
+            lineDesignerWidget:QLineEdit=None,
+            config:dict=None
+            ):  
+        super().__init__(name=name,initialValue=initialValue,action=action,precision=precision,unit=unit,labelDesignerWidget=labelDesignerWidget,lineDesignerWidget=lineDesignerWidget,config=config)
+        self.parameter=parameter
+        self.update()
+
+    def update(self):
+        paramValue=self.parameter.get()
+        try :
+            self.value=conversion_unit(paramValue,self.parameter.unit,self.unit)
+        except :
+            self.value=paramValue
 
     @property
     def value(self):
         return self._value
+
     @value.setter
-    def value(self,value):
-        for f in self.fieldCollection:
-            f.value=valueFromBaseUnit(value,f.unit)
-        self._value=value
+    def value(self,new_value):
+        self._value=self.convertTextToValue(new_value)
+        self.updateTofield()
+        #Automatically converts the field unit into the paramter unit.
+        #If it fials, it just sets the parameter to the field value
+        try :
+            paramValue=conversion_unit(self._value,self.unit,self.parameter.unit)
+        except :
+            paramValue=self._value
+        self.parameter.set(paramValue)
+        
 
 class saveButton(button):
     def __init__(self,fig:pgFig, config:dict, designerWidget:QPushButton=None, exp_name:field=None, sample_name:field=None):
@@ -1197,12 +1236,11 @@ def repr_numbers(value,precision='exact',maxScientficExponent=4,minScientficExpo
             label=('{:.{}f}'.format(value,precision))
     return label
 
-dicUnit=localVariableDic('units')
 def conversion_unit(value,oldUnit,newUnit):   
     if isinstance(oldUnit,str):
-        oldUnit=dicUnit[oldUnit]
+        oldUnit=unitsDic[oldUnit]
     if isinstance(newUnit,str):
-        newUnit=dicUnit[newUnit]
+        newUnit=unitsDic[newUnit]
     if oldUnit==newUnit:
         return value
     if oldUnit['base']!=newUnit['base']:
@@ -1210,7 +1248,7 @@ def conversion_unit(value,oldUnit,newUnit):
     return value*oldUnit['multiplier']/newUnit['multiplier']
 
 def valueToBaseUnit(value,unit):
-        return conversion_unit(value=value, oldUnit=unit, newUnit=unit['base'])
+    return conversion_unit(value=value, oldUnit=unit, newUnit=unit['base'])
     
 def valueFromBaseUnit(value,unit):
     return conversion_unit(value=value, oldUnit=unit['base'], newUnit=unit)
@@ -1230,8 +1268,7 @@ def changeColorWhenInFocus(oldWidget,newWidget):
         oldWidget.setStyleSheet(style)
 
 def testWithDesigner():
-    qapp=QApplication(sys.argv)
-    GUI=Graphical_interface(qapp=qapp, designerFile=localDesignFile('testUI'),title='Example GUI')
+    GUI=Graphical_interface(designerFile=localDesignFile('testUI'),title='Example GUI')
 
     # class MainWindow(QtWidgets.QMainWindow):
     #     def __init__(self, *args, **kwargs):
@@ -1261,7 +1298,6 @@ def testWithDesigner():
 
 def test_pg():
 
-    qapp=QApplication(sys.argv)
     f1=field('toto',10)
     f2=field('toto2',5)
     fields=[f1,f2]
@@ -1273,7 +1309,7 @@ def test_pg():
         return
     b1.setAction(b1_action)
 
-    fig=pgFig()
+    fig=pgFig(refreshRate=30)
     ax=fig.addAx()
     x=np.linspace(0,10,101)
     y=np.cos(x)
@@ -1304,4 +1340,4 @@ def test_fit_params_window():
     for param in fit.free_param_guess.keys():
         pass
 if __name__ == "__main__":
-    test_fit_params_window()
+    test_pg()
