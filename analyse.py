@@ -1511,6 +1511,7 @@ def plot_map(C:np.array,
         ax.invert_yaxis()
     ax.set_xlabel(vlabel)
     ax.set_ylabel(hlabel)
+    ax.set_title(title)
     if hlim is not None :
         ax.set_xlim(hlim)
     if vlim is not None :
