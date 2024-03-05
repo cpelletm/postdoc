@@ -65,10 +65,12 @@ def test_env_variables():
         print("File does not exist")
 
 def test_ni_daq():
+    import nidaqmx
     import qslabcontrol.instruments.ni_daq.virtual_channels as virtual_channels
     daq_sys=nidaqmx.system.System.local()
     chanDic=glib.localVariableDic('ni_daq_physical_chan_conversion.yaml')
     ai_physicalChan=daq_sys.devices[0].ai_physical_chans[0]
+    ai_physicalChan=nidaqmx.system.physical_channel.PhysicalChannel('PXI1Slot4/ai0') #Both works, but the second one is easier
     tipVx=virtual_channels.AiVoltageChannel('tipVx', ai_physicalChan)
     print(tipVx.get())
 
@@ -235,5 +237,13 @@ def Jodok_carbon_guessing_game():
         print("Equivalent compressor time : %.2f days, %.2f hours, %.2f minutes, %.2f seconds"%(days,hours,minutes,seconds))
         print('\n')
 
-a=[-1,2,-3]
-print(np.max(np.abs(a)))
+
+def test_qc_station():
+    import nidaqmx
+    import qslabcontrol.instruments.ni_daq.virtual_channels as virtual_channels
+    station=qc.Station()
+    AOM=virtual_channels.AoVoltageChannel('AOM',nidaqmx.system.physical_channel.PhysicalChannel('PXI1Slot5/ao6'))
+    station.add_component(AOM)
+    station.AOM.set(0.)
+    print(station.snapshot())
+# test_qc_station()

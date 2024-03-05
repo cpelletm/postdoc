@@ -120,106 +120,173 @@ days:
   base: s
   multiplier: 86400
 
+#~~~~~~~~~~~~~  Temperature units
+K:
+  name: K
+  base: K
+  multiplier: 1
+
+mK:
+  name: mK
+  base: K
+  multiplier: 1e-3
+
+
+#~~~~~~~~~~~~~  Voltage units
 V:
   name: V
-  type: voltage
+  base: V
   multiplier: 1
 
 mV:
   name: mV
-  type: voltage
+  base: V
   multiplier: 1e-3
 
 uV:
   name: uV
-  type: voltage
+  base: V
   multiplier: 1e-6
 
 nV:
   name: nV
-  type: voltage
+  base: V
   multiplier: 1e-9
 
 #~~~~~~~~~~~~~  Current units
 A:
   name: A
-  type: current
+  base: A
   multiplier: 1
 
 mA:
   name: mA
-  type: current
+  base: A
   multiplier: 1e-3
 
 uA:
   name: uA
-  type: current
+  base: A
   multiplier: 1e-6
 
 nA:
   name: nA
-  type: current
+  base: A
   multiplier: 1e-9
 
-#~~~~~~~~~~~~~  Temperature units
-K:
-  name: K
-  type: temperature
+#~~~~~~~~~~~~~  Resistance units
+Ohm:
+  name: Ohm
+  base: Ohm
   multiplier: 1
 
-mK:
-  name: mK
-  type: temperature
+mOhm:
+  name: mOhm
+  base: Ohm
   multiplier: 1e-3
+
+uOhm:
+  name: uOhm
+  base: Ohm
+  multiplier: 1e-6
+
+nOhm:
+  name: nOhm
+  base: Ohm
+  multiplier: 1e-9
+
+kOhm:
+  name: kOhm
+  base: Ohm
+  multiplier: 1e3
+
+MOhm:
+  name: MOhm
+  base: Ohm
+  multiplier: 1e6
+
+#~~~~~~~~~~~~~  Capacitance units
+F:
+  name: F
+  base: F
+  multiplier: 1
+
+mF:
+  name: mF
+  base: F
+  multiplier: 1e-3
+
+uF:
+  name: uF
+  base: F
+  multiplier: 1e-6
+
+nF:
+  name: nF
+  base: F
+  multiplier: 1e-9
+
+pF:
+  name: pF
+  base: F
+  multiplier: 1e-12
+
+#~~~~~~~~~~~~~  Inductance units
+H:
+  name: H
+  base: H
+  multiplier: 1
+
+mH:
+  name: mH
+  base: H
+  multiplier: 1e-3
+
+uH:
+  name: uH
+  base: H
+  multiplier: 1e-6
+
+nH:
+  name: nH
+  base: H
+  multiplier: 1e-9
+
+pH:
+  name: pH
+  base: H
+  multiplier: 1e-12
 
 #~~~~~~~~~~~~~  Magnetic field units
 T:
   name: T
-  type: magnetic_field
+  base: T
   multiplier: 1
 
 mT:
   name: mT
-  type: magnetic_field
+  base: T
   multiplier: 1e-3
 
 uT:
   name: uT
-  type: magnetic_field
+  base: T
   multiplier: 1e-6
 
 nT:
   name: nT
-  type: magnetic_field
+  base: T
   multiplier: 1e-9
 
-G:
+G: 
   name: G
-  type: magnetic_field
+  base: T
   multiplier: 1e-4
 
 mG:
   name: mG
-  type: magnetic_field
+  base: T
   multiplier: 1e-7
 
-#~~~~~~~~~~~~~  Distance units
-m:
-  name: m
-  type: distance
-  multiplier: 1
+  
 
-mm:
-  name: mm
-  type: distance
-  multiplier: 1e-3
-
-um:
-  name: um
-  type: distance
-  multiplier: 1e-6
-
-nm:
-  name: nm
-  type: distance
-  multiplier: 1e-9
