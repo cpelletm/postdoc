@@ -733,8 +733,8 @@ def fit_B_dipole(x,y,B0=2000,x0=10) : #x : distance en mm, y : champ mag en G
     popt, pcov = curve_fit(f, x, y, p0)
     return(popt,f(x,popt[0],popt[1]))
 
-def ESR_n_pics(x,y,cs='auto',width=False,ss=None,amp=None,typ='gauss') : #typ="gauss" ou "lor"
-    if cs=='auto':
+def ESR_n_pics(x,y,cs=[],width=False,ss=None,amp=None,typ='gauss',adaptiveFit=False) : #typ="gauss" ou "lor"
+    if len(cs)==0 :
         cs=find_ESR_peaks(x,y)
     if not ss :
         ss=y[0]
@@ -753,6 +753,15 @@ def ESR_n_pics(x,y,cs='auto',width=False,ss=None,amp=None,typ='gauss') : #typ="g
     n=len(cs)
     widths=np.ones(n)*width
     amps=np.ones(n)*amp
+    if adaptiveFit :
+        for i in range(n):
+            c=cs[i]
+            fmin=c-width
+            imin=closest_elem(x,fmin)
+            fmax=c+width
+            imax=closest_elem(x,fmax)
+            amps[i]=min(y[imin:imax])-max(y[imin:imax])
+            cs[i]=x[list(y).index(min(y[imin:imax]))]
     p0=[ss]
     for c in cs:
         p0+=[c]
@@ -1511,6 +1520,7 @@ def plot_map(C:np.array,
         ax.invert_yaxis()
     ax.set_xlabel(vlabel)
     ax.set_ylabel(hlabel)
+    ax.set_title(title)
     if hlim is not None :
         ax.set_xlim(hlim)
     if vlim is not None :
