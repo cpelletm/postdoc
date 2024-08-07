@@ -249,8 +249,8 @@ class filter():
         self.sigma=1/(2*np.pi*filterSize)
         self.nx=baseArray.shape[0]
         self.ny=baseArray.shape[1]
-        self.kxs=np.fft.fftfreq(self.nx,lx/self.nx)
-        self.kys=np.fft.fftfreq(self.ny,ly/self.ny)
+        self.kxs=np.fft.fftfreq(self.nx,lx/self.nx)*2*np.pi
+        self.kys=np.fft.fftfreq(self.ny,ly/self.ny)*2*np.pi
         self.filterArray=np.zeros(baseArray.shape)
         self.makeFilter()
         
@@ -288,8 +288,8 @@ class forwardPropagation():
         self.gaussianSmooth=gaussianSmooth
         self.nx=magArray.shape[0]
         self.ny=magArray.shape[1]
-        self.kxs=np.fft.fftfreq(self.nx,lx/self.nx)
-        self.kys=np.fft.fftfreq(self.ny,ly/self.ny)
+        self.kxs=np.fft.fftfreq(self.nx,lx/self.nx)*2*np.pi
+        self.kys=np.fft.fftfreq(self.ny,ly/self.ny)*2*np.pi
         self.BArray=np.zeros(magArray.shape)
         self.TFBArray=np.zeros(magArray.shape,dtype=complex)
         if magUnit=='SI':
@@ -306,7 +306,7 @@ class forwardPropagation():
         self.makeBArray()
         
     def makeBArray(self):
-        #Propagation matrix curtesy of Lucas Thiel phD, I hope he was right
+        #Propagation matrix curtesy of Lucas Thiel PhD, I hope he was right
         def propMatrix(kx,ky,z):
             k=np.sqrt(kx**2+ky**2)
             D=np.zeros((3,3),dtype=complex)
@@ -331,7 +331,7 @@ class forwardPropagation():
             TFfilter=filter(self.TFBArray,typ='gaussian',lx=self.lx,ly=self.ly,filterSize=self.gaussianSmooth).filterArray
             self.TFBArray=self.TFBArray*TFfilter
       
-        self.BArray=fft3d(self.TFBArray,inverse=True).real
+        self.BArray=fft3d(self.TFBArray,inverse=True,twoPi=True).real
 
     def plot3dField(self,ax=None,show=True,**plotargs):
         plot3Darray(self.BArray,ax=ax,show=show,centered=True,**plotargs)
@@ -366,15 +366,22 @@ class forwardPropagation():
         Bproj=ux*self.BArray[:,:,0]+uy*self.BArray[:,:,1]+uz*self.BArray[:,:,2]
         return plot2Darray(Bproj,ax=ax,show=show,centered=True,**plotargs)
 
-def fft3d(array,shift=False,inverse=False):
+def fft3d(array,shift=False,inverse=False,twoPi=False):
     #FFT of a 3d array
+    #If shift is True, the higher frequencies are put in the center of the array
+    #If inverse is True, the inverse FFT is performed
+    #If twoPi is True, the ftt is performed in the angular frequency domain (2*pi is multiplied to the result)
     assert(array.shape[2]==3)
     TFarray=np.zeros(array.shape,dtype=complex)
     for i in range(3):
         if inverse:
             TFarray[:,:,i]=np.fft.ifft2(array[:,:,i])
+            if twoPi:
+                TFarray[:,:,i]=TFarray[:,:,i]/(2*np.pi)
         else:
             TFarray[:,:,i]=np.fft.fft2(array[:,:,i])
+            if twoPi:
+                TFarray[:,:,i]=TFarray[:,:,i]*(2*np.pi)
         if shift:
             TFarray[:,:,i]=np.fft.fftshift(TFarray[:,:,i])     
     return TFarray
@@ -431,18 +438,31 @@ def homogeneous3dMag(shape,orientation='',theta=0,phi=0,Ms=1):
     mag[:,:,2]=shape*Ms*np.cos(theta*np.pi/180)
     return mag
 
+def B_NV_to_B_z(Barray,lx,ly,NVtheta,NVphi):
+    #Barray is the magnetic field in the NV frame (in T)
+    #lx and ly are the size of the array in nm
+    #NVtheta and NVphi are the angles of the NV axis in degrees
+    NVorientation=[np.sin(NVtheta*np.pi/180)*np.sin(NVphi*np.pi/180),np.sin(NVtheta*np.pi/180)*np.cos(NVphi*np.pi/180),np.cos(NVtheta*np.pi/180)]
+    TFBarray_NV=np.fft.fft2(Barray)
+    TFBarray_z=np.zeros(Barray.shape,dtype=complex)
+    kxs=np.fft.fftfreq(Barray.shape[0],lx/Barray.shape[0])*2*np.pi
+    kys=np.fft.fftfreq(Barray.shape[1],ly/Barray.shape[1])*2*np.pi
+    for i in range(Barray.shape[0]):
+        for j in range(Barray.shape[1]):
+            kx=kxs[i]
+            ky=kys[j]
+            k=np.sqrt(kx**2+ky**2)
+            if k!=0:
+                b_NV=TFBarray_NV[i,j]
+                b_z=b_NV/(-1j*kx/k*NVorientation[0]-1j*ky/k*NVorientation[1]+NVorientation[2])
+                TFBarray_z[i,j]=b_z
+    Barray_z=np.fft.ifft2(TFBarray_z).real
+    return Barray_z
+
 if __name__=='__main__':
-    ma=maskArray()
-    ma.load('/home/clement/Postdoc/python/Perso/test_shape.npy')
-    mag=homogeneous3dMag(ma.mask,theta=0,phi=90,Ms=24)
-    # TFmag=fft3d(mag,shift=True)
-    # plot3darray(abs(TFmag))
-    # TFmask=filter(TFmag,typ='gaussian',lx=1,ly=10,filterSize=10).filterArray
-    # TFmag=TFmag*TFmask
-
-
-    prop=forwardPropagation(mag,lx=15000,ly=15000,z=50,gaussianSmooth=50,magUnit='muB')
-    prop.plotFieldProjection(orientation='x')
+    Barray=np.loadtxt('/home/clement/Postdoc/python/Perso/Field_reconstruction/projection_NV0.csv',delimiter=',')
+    Barray_z=B_NV_to_B_z(Barray,15000,15000,54.7,180)
+    plot2Darray(Barray_z)
 
 
 

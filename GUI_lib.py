@@ -973,11 +973,17 @@ class lineEdit(generalWidget):
     def value(self):
         return self._value
     
+    
     @value.setter
     def value(self,new_value):
         self._value=self.convertTextToValue(new_value)
         self.updateTofield()
 
+    def getValue(self):
+        return self.value
+    
+    def setValue(self,new_value):
+        self.value=new_value
     def convertTextToValue(self,text):
         try :
             value=float(text)

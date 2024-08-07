@@ -4,6 +4,7 @@ import json
 import yaml
 import pyqtgraph as pg
 import numpy as np
+import matplotlib.pyplot as plt
 import qcodes as qc
 # import nidaqmx 
 # from nidaqmx.system.system import System
@@ -247,3 +248,23 @@ def test_qc_station():
     station.AOM.set(0.)
     print(station.snapshot())
 # test_qc_station()
+
+def securite_routiere():
+    L=30000
+    Vs=np.linspace(0,250,1000)
+    Vs_mps=Vs*1000/3600
+    Delta_V_mps=10*1000/3600
+    Delta_T=L/Vs_mps-L/(Vs_mps+Delta_V_mps)
+    plt.plot(Vs,Delta_T)
+    plt.plot(Vs,30*np.ones(len(Vs)))
+    plt.xlabel('Vitesse (km/h)')
+    plt.ylabel('Temps gagné (s)')
+    plt.title('Temps gagné en fonction de la vitesse')
+    plt.ylim(0,200)
+    plt.show()
+# securite_routiere()
+
+
+a=np.array([0.5,0.5])
+print(a>0.4)
+print(np.all(a>0.4))
