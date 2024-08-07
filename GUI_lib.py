@@ -18,7 +18,7 @@ from PyQt5 import QtCore, uic,QtWidgets
 from PyQt5.QtGui import QFont,QTransform,QCloseEvent
 from PyQt5.QtCore import (Qt, QTimer,QSize, QEvent)
 from PyQt5.QtWidgets import (QWidget, QPushButton, QComboBox,
-    QHBoxLayout, QVBoxLayout, QApplication, QDesktopWidget, QMainWindow, QLineEdit, QLabel, QCheckBox, QFileDialog, QErrorMessage, QMessageBox, QFrame)
+    QHBoxLayout, QVBoxLayout, QApplication, QDesktopWidget, QMainWindow, QLineEdit, QLabel, QCheckBox, QFileDialog, QErrorMessage, QMessageBox, QFrame, QSpinBox)
 
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -123,8 +123,10 @@ def localVariableDic(configFileName):
             return recursiveDict(elem)
         elif isinstance(elem,list):
             return recursiveList(elem)
+        elif isinstance(elem,str):
+            return recursiveStr(elem)
         else :
-            return recursiveValue(elem)
+            return elem
 
     def recursiveDict(d:dict):
         for key in d.keys():
@@ -136,15 +138,24 @@ def localVariableDic(configFileName):
             l[i]=recursiveAll(l[i])
         return l
 
-    def recursiveValue(elem):
-        if isinstance(elem,str) and '@' in elem:
-            key,file=elem.split('@')
-            if file=="self":
-                return recursiveAll(dloc[key])
-            else :
+    def recursiveStr(elem):
+
+        if elem[0]=='@':
+            file,key=elem[1:].split('.',1)
+            if key :
                 return localVariableDic(file)[key]
+            else :
+                return localVariableDic(file)
+        elif elem.split('.')>1:
+            dic=dloc
+            key,value=elem.split('.',1)
+            while value:
+                dic=dic[key]
+                key,value=value.split('.',1)
+            return dic[key]
         else :
             return elem
+        
 
     return recursiveAll(dloc)
 
@@ -186,6 +197,7 @@ def checkComputerDic():
         computerDic['computer_name']=input()
         change=True
     if computerDic['save_folder']=="":
+        print("Save folder not found. Please select a folder to save data :")
         computerDic['save_folder']=QFileDialog.getExistingDirectory(None, "Select Save Folder")
         change=True
     if change:
@@ -999,8 +1011,28 @@ class lineEdit(generalWidget):
         
         if actionType=='editing finished':
             self.widget.editingFinished.connect(action)
-        elif actionType=='Return Pressed' :
+        elif actionType=='return pressed' :
             self.widget.returnPressed.connect(action)
+
+class spinBox(generalWidget):
+    def __init__(self,
+                 default_value=0,
+                 action="update",
+                 action_type='editing finished',
+                 unit='',
+                 minimum=-1000000000,
+                 maximum=1000000000,
+                 step_size=1,
+                 designerWidget:QSpinBox=None): 
+        super().__init__()
+        self.widget=QSpinBox()
+        self.widget.setValue(default_value)
+        self.widget.setMinimum(minimum)
+        self.widget.setMaximum(maximum)
+        self.widget.setSingleStep(step_size)
+        self.unit=unit
+        self.widget.setSuffix(' '+self.unit)
+        
 
 class field(lineEdit):
     def __init__(
@@ -1043,15 +1075,15 @@ class fieldParameter(field):
             parameter:Parameter,
             name='',
             initialValue='noValue',
-            action=False,
+            action='update',
             precision='exact',
             unit='no_unit',
             labelDesignerWidget:QLabel=None,
             lineDesignerWidget:QLineEdit=None,
             config:dict=None
             ):  
-        super().__init__(name=name,initialValue=initialValue,action=action,precision=precision,unit=unit,labelDesignerWidget=labelDesignerWidget,lineDesignerWidget=lineDesignerWidget,config=config)
         self.parameter=parameter
+        super().__init__(name=name,initialValue=initialValue,action=action,precision=precision,unit=unit,labelDesignerWidget=labelDesignerWidget,lineDesignerWidget=lineDesignerWidget,config=config)
         self.update()
 
     def update(self):
@@ -1069,8 +1101,8 @@ class fieldParameter(field):
     def value(self,new_value):
         self._value=self.convertTextToValue(new_value)
         self.updateTofield()
-        #Automatically converts the field unit into the paramter unit.
-        #If it fials, it just sets the parameter to the field value
+        #Automatically converts the field unit into the parameter unit.
+        #If it fails, it just sets the parameter to the field value
         try :
             paramValue=conversion_unit(self._value,self.unit,self.parameter.unit)
         except :
@@ -1268,7 +1300,8 @@ def changeColorWhenInFocus(oldWidget,newWidget):
         oldWidget.setStyleSheet(style)
 
 def testWithDesigner():
-    GUI=Graphical_interface(designerFile=localDesignFile('testUI'),title='Example GUI')
+    GUI=Graphical_interface(designerFile='testUI',title='Example GUI')
+    print(dir(GUI))
 
     # class MainWindow(QtWidgets.QMainWindow):
     #     def __init__(self, *args, **kwargs):
@@ -1340,4 +1373,4 @@ def test_fit_params_window():
     for param in fit.free_param_guess.keys():
         pass
 if __name__ == "__main__":
-    test_pg()
+    testWithDesigner()

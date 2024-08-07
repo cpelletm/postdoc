@@ -247,3 +247,6 @@ def test_qc_station():
     station.AOM.set(0.)
     print(station.snapshot())
 # test_qc_station()
+
+a={'a':1,'b':2}
+print(a[])

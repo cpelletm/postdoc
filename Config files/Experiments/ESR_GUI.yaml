@@ -2,7 +2,6 @@
 name: ESR_GUI
 designer_file: name@self #so 'ESR_GUI.ui' in this case
 style_sheet: default_style_sheet #name of the style sheet file in Config files folder
-station: LT_ATTODRY #select_station to select your station at startup
 
 #~~~~~~~~~~~~~ Instrument settings
 mw_source: SMBV@instruments

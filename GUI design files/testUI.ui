@@ -1418,15 +1418,15 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>GraphicsLayoutWidget</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">pyqtgraph</header>
+  </customwidget>
+  <customwidget>
    <class>PlotWidget</class>
    <extends>QWidget</extends>
    <header>pyqtgraph</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>GraphicsLayoutWidget</class>
-   <extends>QGraphicsView</extends>
-   <header location="global">pyqtgraph</header>
   </customwidget>
  </customwidgets>
  <resources/>

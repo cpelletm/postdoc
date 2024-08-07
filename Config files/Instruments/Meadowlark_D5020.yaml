@@ -1,0 +1,11 @@
+name: Meadowlark_D5020
+
+Voltage:
+  name: D5020_voltage
+  unit: V
+  default_value: 0
+  min_value: 0
+  max_value: 10
+
+#Port for the LCPR. Labeled LC 1-2. Possible values : 1,2,"both"
+port: 1
