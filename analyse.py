@@ -1474,7 +1474,8 @@ def plot_map(C:np.array,
              removeCb=False, 
              show=True, 
              hlim=None, 
-             vlim=None):
+             vlim=None,
+             tightLayout=True):
     #color : "viridis", "Blues_r", "bwr" ...
     #invertX/Y: inverts the x/y axis (biggest values on tthe lefet)
     #flipXY : flips the x and y axes
@@ -1526,7 +1527,8 @@ def plot_map(C:np.array,
     if vlim is not None :
         ax.set_ylim(vlim)
     cb=plt.colorbar(mappable=scan,ax=ax,label=colorBarLabel)
-    fig.set_tight_layout(tight=True)
+    if tightLayout :
+        fig.set_tight_layout(tight=True)
     if removeCb :
         cb.remove()
     if show :
