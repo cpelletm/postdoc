@@ -1229,7 +1229,26 @@ class NV_C13_Hamiltonian():
 
         return(np.sort(transis))
 
-
+def B_NV_to_B_z(Barray,lx,ly,NVtheta,NVphi):
+    #Barray is the magnetic field in the NV frame (in T)
+    #lx and ly are the size of the array in nm
+    #NVtheta and NVphi are the angles of the NV axis in degrees
+    NVorientation=[np.sin(NVtheta*np.pi/180)*np.sin(NVphi*np.pi/180),np.sin(NVtheta*np.pi/180)*np.cos(NVphi*np.pi/180),np.cos(NVtheta*np.pi/180)]
+    TFBarray_NV=np.fft.fft2(Barray)
+    TFBarray_z=np.zeros(Barray.shape,dtype=complex)
+    kxs=np.fft.fftfreq(Barray.shape[0],lx/Barray.shape[0])*2*np.pi
+    kys=np.fft.fftfreq(Barray.shape[1],ly/Barray.shape[1])*2*np.pi
+    for i in range(Barray.shape[0]):
+        for j in range(Barray.shape[1]):
+            kx=kxs[i]
+            ky=kys[j]
+            k=np.sqrt(kx**2+ky**2)
+            if k!=0:
+                b_NV=TFBarray_NV[i,j]
+                b_z=b_NV/(-1j*kx/k*NVorientation[0]-1j*ky/k*NVorientation[1]+NVorientation[2])
+                TFBarray_z[i,j]=b_z
+    Barray_z=np.fft.ifft2(TFBarray_z).real
+    return Barray_z
 
 
 
@@ -1474,7 +1493,9 @@ def plot_map(C:np.array,
              removeCb=False, 
              show=True, 
              hlim=None, 
-             vlim=None):
+             vlim=None,
+             exportDataFile=False,
+             exportPictureFile=False):
     #color : "viridis", "Blues_r", "bwr" ...
     #invertX/Y: inverts the x/y axis (biggest values on tthe lefet)
     #flipXY : flips the x and y axes
@@ -1525,10 +1546,20 @@ def plot_map(C:np.array,
         ax.set_xlim(hlim)
     if vlim is not None :
         ax.set_ylim(vlim)
+    if exportDataFile :
+        arrayWithAxes=np.vstack((hAxis,C))
+        vAxisTxt=np.append(0,vAxis)
+        vAxisTxt=np.array([vAxisTxt]).T
+        arrayWithAxes=np.hstack((vAxisTxt,arrayWithAxes))
+        np.savetxt(exportDataFile,arrayWithAxes,delimiter=',')
+    
+
     cb=plt.colorbar(mappable=scan,ax=ax,label=colorBarLabel)
     fig.set_tight_layout(tight=True)
     if removeCb :
         cb.remove()
+    if exportPictureFile :
+        fig.savefig(exportPictureFile)
     if show :
         plt.show()
     
