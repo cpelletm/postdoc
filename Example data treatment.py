@@ -28,3 +28,4 @@ def ESRmap_0726():
     xAxis=scanESR.xrange
     yAxis=scanESR.yrange
     plot_map(a, vAxis=xAxis, hAxis=yAxis, vmin=-0.3, vmax=0.3, color='bwr' ,colorBarLabel='B (mT)' , invertH=True,invertV=True)
+

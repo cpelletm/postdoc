@@ -249,8 +249,6 @@ def test_qc_station():
     print(station.snapshot())
 # test_qc_station()
 
-a={'a':1,'b':2}
-print(a[])
 def securite_routiere():
     L=30000
     Vs=np.linspace(0,250,1000)
@@ -267,6 +265,3 @@ def securite_routiere():
 # securite_routiere()
 
 
-a=np.array([0.5,0.5])
-print(a>0.4)
-print(np.all(a>0.4))

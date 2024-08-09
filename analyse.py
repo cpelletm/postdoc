@@ -1555,7 +1555,8 @@ def plot_map(C:np.array,
     
 
     cb=plt.colorbar(mappable=scan,ax=ax,label=colorBarLabel)
-    fig.set_tight_layout(tight=True)
+    if tightLayout :
+        fig.set_tight_layout(tight=True)
     if removeCb :
         cb.remove()
     if exportPictureFile :
